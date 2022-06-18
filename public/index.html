@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#000000" />
+    <meta
+      name="description"
+      content="Web site created using create-react-app"
+    />
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
+    <!--
+      manifest.json provides metadata used when your web app is installed on a
+      user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
+    -->
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+    <!--
+      Notice the use of %PUBLIC_URL% in the tags above.
+      It will be replaced with the URL of the `public` folder during the build.
+      Only files inside the `public` folder can be referenced from the HTML.
+
+      Unlike "/favicon.ico" or "favicon.ico", "%PUBLIC_URL%/favicon.ico" will
+      work correctly both with client-side routing and a non-root public URL.
+      Learn how to configure a non-root public URL by running `npm run build`.
+    -->
+    <title>React App</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script>
+
+      
+      let prices = [];
+      let buys = [];
+      let totalBuys;
+      let html;
+      let avgPrice;
+
+      async function buildBuys(_exchangeAddress, _address, _symbol) {
+        let getPrices = await getPrice(_exchangeAddress, _address);
+
+        let priceDetails = getPrices.data.ethereum.dexTrades[0];
+        if ( priceDetails !== undefined ){
+          let price = Number(priceDetails.baseAmount) / Number(priceDetails.quoteAmount);
+
+          let newBuy = {};
+            newBuy.exchangeName = priceDetails.exchange.fullName;
+            newBuy.exchangeAddress = _exchangeAddress;
+            newBuy.price = price;
+            newBuy.symbol = _symbol;
+      
+
+          prices.push(price);
+
+          buys.push(newBuy);
+
+        };
+
+      };
+
+      async function swapClick(address) {
+        //Get Exchange Data
+        let exchangeData = await getExchanges(address);
+
+        let exchanges = exchangeData.data.ethereum.dexTrades;
+
+        for (i = 0; i < exchanges.length; i++) {
+          
+          let exchangeAddress = exchanges[i].exchange.address.address;
+          let symbol = exchanges[i].baseCurrency.symbol;
+          buildBuys(exchangeAddress, address, symbol);
+          
+        };
+        
+        
+
+          
+
+        setTimeout(function () {
+
+          // Get Average Price
+          let sum = prices.reduce((a, b) => a + b, 0);
+
+          console.log(sum);
+          avgPrice = sum / prices.length;
+          // Sort Buys by Price Desc
+          buys.sort(function (a, b) {
+            return a.price - b.price;
+          });
+          buys.reverse();
+          createBuys(buys);
+          buys.reverse();
+          createSells(buys);
+          buys = [];
+          prices = [];
+        }, 1000);
+
+      };
+        async function createSells(_buys, _totalBuys) {
+
+          $('.sells').empty();
+
+          for (i = 0; i < _buys.length; i++) {
+
+            let priceDelta = _buys[i].price - avgPrice;
+
+            priceDelta = Number(priceDelta).toFixed(6);
+            html = '';
+            let htmlSegment = `<div class="buy_card">
+                                <div class="token_img">
+                                  <img src='$logo' alt='' />
+                                </div>
+                                <div class='details_left'>
+                                  <div class='symbol'>
+                                    ${_buys[i].symbol}
+                                  </div>
+                                  <div class='label'>
+                                    $${_buys[i].price.toFixed(5)}
+                                  </div>
+                                </div>
+                                <div class='details_right'>
+                                  <div class='price'>
+                                    ${priceDelta}
+                                  </div>
+                                  <div class='label'>
+                                    ${_buys[i].exchangeName}
+                                  </div>
+                                </div>
+                              </div>`;
+            html += htmlSegment;
+            $('.sells').prepend(html);
+          };
+
+        };
+
+      async function createBuys(_buys, _totalBuys) {
+
+          $('.buys').empty();
+
+          for (i = 0; i < _buys.length; i++) {
+
+            let priceDelta = _buys[i].price - avgPrice;
+
+            priceDelta = Number(priceDelta).toFixed(6);
+            html = '';
+            let htmlSegment = `<div class="buy_card">
+                                <div class="token_img">
+                                  <img src='$logo' alt='' />
+                                </div>
+                                <div class='details_left'>
+                                  <div class='symbol'>
+                                    ${_buys[i].symbol}
+                                  </div>
+                                  <div class='label'>
+                                    $${_buys[i].price.toFixed(5)}
+                                  </div>
+                                </div>
+                                <div class='details_right'>
+                                  <div class='price'>
+                                    ${priceDelta}
+                                  </div>
+                                  <div class='label'>
+                                    ${_buys[i].exchangeName}
+                                  </div>
+                                </div>
+                              </div>`;
+            html += htmlSegment;
+            $('.buys').prepend(html);
+          };
+        
+      };
+
+      async function getPrice(_exchangeAddress, _tokenAddress) {
+
+          //Get Exchanges With Currency
+          var myHeaders = new Headers();
+          myHeaders.append("X-API-KEY", "BQYs9KbLZIw9YDmWFPLx42fBWjZFtanL");
+          myHeaders.append("Content-Type", "application/json");
+
+          var graphql = JSON.stringify({
+            query: "query ($network: EthereumNetwork!, $address: String!, $quote: String!, $token: String!, $limit: Int!, $offset: Int!, $from: ISO8601DateTime, $till: ISO8601DateTime) {\r\n  ethereum(network: $network) {\r\n    dexTrades(\r\n      options: {desc: [\"block.height\", \"tradeIndex\"], limit: $limit, offset: $offset}\r\n      date: {since: $from, till: $till}\r\n      baseCurrency: {is: $token}\r\n      quoteCurrency: {is: $quote}\r\n      exchangeAddress: {is: $address}\r\n    ) {\r\n      block {\r\n        timestamp {\r\n          time(format: \"%Y-%m-%d %H:%M:%S\")\r\n        }\r\n        height\r\n      }\r\n      tradeIndex\r\n      protocol\r\n      exchange {\r\n        fullName\r\n        address {\r\n            address\r\n        }\r\n      }\r\n      smartContract {\r\n        address {\r\n          address\r\n          annotation\r\n        }\r\n      }\r\n      baseAmount\r\n      baseCurrency {\r\n        address\r\n        symbol\r\n      }\r\n      quoteAmount\r\n      quoteCurrency {\r\n        address\r\n        symbol\r\n      }\r\n      transaction {\r\n        hash\r\n      }\r\n    }\r\n  }\r\n}\r\n",
+            variables: { "limit": 1, "offset": 0, "network": "matic", "address": _exchangeAddress, "token": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174", "quote": _tokenAddress, "from": "2022-06-11", "till": "2022-06-18T23:59:59", "dateFormat": "%Y-%m-%d" }
+          })
+
+          var requestOptions = {
+            method: 'POST',
+            headers: myHeaders,
+            body: graphql,
+            redirect: 'follow'
+          };
+
+          try {
+            let res = await fetch("https://graphql.bitquery.io", requestOptions).then((response) => { return response.json() });
+            return await res;
+          } catch (error) {
+            console.log(error);
+          };
+
+        };
+
+      async function getExchanges(_Address) {
+
+        //Get Exchanges With Currency
+        var myHeaders = new Headers();
+        myHeaders.append("X-API-KEY", "BQYs9KbLZIw9YDmWFPLx42fBWjZFtanL");
+        myHeaders.append("Content-Type", "application/json");
+        
+        var graphql = JSON.stringify({
+          query: "query ($network: EthereumNetwork!, $token: String!, $from: ISO8601DateTime, $till: ISO8601DateTime) {\r\n  ethereum(network: $network) {\r\n    dexTrades(\r\n      options: {desc: \"amount\"}\r\n      date: {since: $from, till: $till}\r\n      baseCurrency: {is: $token}\r\n      protocol: {is: \"Uniswap v2\"}\r\n      exchangeName: {not: \"\"}\r\n    ) {\r\n      exchange {\r\n        fullName\r\n        address {\r\n          address\r\n        }\r\n      }\r\n      baseCurrency {\r\n          symbol\r\n      }\r\n      amount: baseAmount\r\n    }\r\n  }\r\n}\r\n", 
+          variables: { "limit": 100, "offset": 0, "network": "matic", "token": _Address, "from": "2022-06-11", "till": "2022-06-18T23:59:59", "dateFormat": "%Y-%m-%d" }
+        });
+
+        var requestOptions = {
+          method: 'POST',
+          headers: myHeaders,
+          body: graphql,
+          redirect: 'follow'
+        };
+
+        try {
+          let res = await fetch("https://graphql.bitquery.io", requestOptions).then((response)=> {return response.json()});
+          return await res;
+        } catch (error) {
+          console.log(error);
+        };
+
+      };
+
+    </script>
+  </head>
+  <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root"></div>
+    <!--
+      This HTML file is a template.
+      If you open it directly in the browser, you will see an empty page.
+
+      You can add webfonts, meta tags, or analytics to this file.
+      The build step will place the bundled scripts into the <body> tag.
+
+      To begin the development, run `npm start` or `yarn start`.
+      To create a production bundle, use `npm run build` or `yarn build`.
+    -->
+  </body>
+</html>
