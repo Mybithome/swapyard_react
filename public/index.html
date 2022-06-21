@@ -35,6 +35,16 @@
       let html;
       let avgPrice;
 
+      let selectedTokenAddress;
+      let buyExchange;
+      let sellExchange;
+      let borrowAmount;
+    
+      let days = 1;
+      let rightNow = new Date();
+      let DaysAgo = new Date();
+      DaysAgo.setDate(DaysAgo.getDate() - days);
+
       async function buildBuys(_exchangeAddress, _address, _symbol) {
         let getPrices = await getPrice(_exchangeAddress, _address);
 
@@ -57,9 +67,13 @@
 
       };
 
-      async function swapClick(address) {
+      async function swapClick(el, tokenAddress) {
+
+
+        $('.selected_cards .swap_card').replaceWith(el);
+
         //Get Exchange Data
-        let exchangeData = await getExchanges(address);
+        let exchangeData = await getExchanges(tokenAddress);
 
         let exchanges = exchangeData.data.ethereum.dexTrades;
 
@@ -67,7 +81,7 @@
           
           let exchangeAddress = exchanges[i].exchange.address.address;
           let symbol = exchanges[i].baseCurrency.symbol;
-          buildBuys(exchangeAddress, address, symbol);
+          buildBuys(exchangeAddress, tokenAddress, symbol);
           
         };
         
@@ -95,7 +109,20 @@
         }, 1000);
 
       };
-        async function createSells(_buys, _totalBuys) {
+
+      async function buyClick(el, _buyExchange) {
+
+        $('.selected_cards .buy_card').replaceWith(el);
+        buyExchange = _buyExchange;
+      };
+
+      async function sellClick(el, _sellExchange) {
+
+        $('.selected_cards .sell_card').replaceWith(el);
+        sellExchange = _sellExchange;
+      };
+
+      async function createSells(_buys, _totalBuys) {
 
           $('.sells').empty();
 
@@ -105,7 +132,7 @@
 
             priceDelta = Number(priceDelta).toFixed(6);
             html = '';
-            let htmlSegment = `<div class="buy_card">
+            let htmlSegment = `<div class="sell_card" onClick="sellClick(this, '${_buys[i].exchangeAddress}')">
                                 <div class="token_img">
                                   <img src='$logo' alt='' />
                                 </div>
@@ -142,7 +169,7 @@
 
             priceDelta = Number(priceDelta).toFixed(6);
             html = '';
-            let htmlSegment = `<div class="buy_card">
+            let htmlSegment = `<div class="buy_card" onClick="buyClick(this, '${_buys[i].exchangeAddress}')">
                                 <div class="token_img">
                                   <img src='$logo' alt='' />
                                 </div>
@@ -178,7 +205,7 @@
 
           var graphql = JSON.stringify({
             query: "query ($network: EthereumNetwork!, $address: String!, $quote: String!, $token: String!, $limit: Int!, $offset: Int!, $from: ISO8601DateTime, $till: ISO8601DateTime) {\r\n  ethereum(network: $network) {\r\n    dexTrades(\r\n      options: {desc: [\"block.height\", \"tradeIndex\"], limit: $limit, offset: $offset}\r\n      date: {since: $from, till: $till}\r\n      baseCurrency: {is: $token}\r\n      quoteCurrency: {is: $quote}\r\n      exchangeAddress: {is: $address}\r\n    ) {\r\n      block {\r\n        timestamp {\r\n          time(format: \"%Y-%m-%d %H:%M:%S\")\r\n        }\r\n        height\r\n      }\r\n      tradeIndex\r\n      protocol\r\n      exchange {\r\n        fullName\r\n        address {\r\n            address\r\n        }\r\n      }\r\n      smartContract {\r\n        address {\r\n          address\r\n          annotation\r\n        }\r\n      }\r\n      baseAmount\r\n      baseCurrency {\r\n        address\r\n        symbol\r\n      }\r\n      quoteAmount\r\n      quoteCurrency {\r\n        address\r\n        symbol\r\n      }\r\n      transaction {\r\n        hash\r\n      }\r\n    }\r\n  }\r\n}\r\n",
-            variables: { "limit": 1, "offset": 0, "network": "matic", "address": _exchangeAddress, "token": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174", "quote": _tokenAddress, "from": "2022-06-11", "till": "2022-06-18T23:59:59", "dateFormat": "%Y-%m-%d" }
+            variables: { "limit": 1, "offset": 0, "network": "matic", "address": _exchangeAddress, "token": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174", "quote": _tokenAddress, "from": DaysAgo, "till": rightNow, "dateFormat": "%Y-%m-%d" }
           })
 
           var requestOptions = {
@@ -203,12 +230,13 @@
         var myHeaders = new Headers();
         myHeaders.append("X-API-KEY", "BQYs9KbLZIw9YDmWFPLx42fBWjZFtanL");
         myHeaders.append("Content-Type", "application/json");
+
         
         var graphql = JSON.stringify({
           query: "query ($network: EthereumNetwork!, $token: String!, $from: ISO8601DateTime, $till: ISO8601DateTime) {\r\n  ethereum(network: $network) {\r\n    dexTrades(\r\n      options: {desc: \"amount\"}\r\n      date: {since: $from, till: $till}\r\n      baseCurrency: {is: $token}\r\n      protocol: {is: \"Uniswap v2\"}\r\n      exchangeName: {not: \"\"}\r\n    ) {\r\n      exchange {\r\n        fullName\r\n        address {\r\n          address\r\n        }\r\n      }\r\n      baseCurrency {\r\n          symbol\r\n      }\r\n      amount: baseAmount\r\n    }\r\n  }\r\n}\r\n", 
-          variables: { "limit": 100, "offset": 0, "network": "matic", "token": _Address, "from": "2022-06-11", "till": "2022-06-18T23:59:59", "dateFormat": "%Y-%m-%d" }
+          variables: { "limit": 100, "offset": 0, "network": "matic", "token": _Address, "from": DaysAgo, "till": rightNow, "dateFormat": "%Y-%m-%d" }
         });
-
+        //2022 - 06 - 18T23: 59: 59
         var requestOptions = {
           method: 'POST',
           headers: myHeaders,
@@ -225,6 +253,154 @@
 
       };
 
+      async function getTrades() {
+          //Get Trade Data
+          var myHeaders = new Headers();
+          myHeaders.append("X-API-KEY", "BQYs9KbLZIw9YDmWFPLx42fBWjZFtanL");
+          myHeaders.append("Content-Type", "application/json");
+
+          var graphql = JSON.stringify({
+            query: "query ($network: EthereumNetwork!, $limit: Int!, $offset: Int!, $from: ISO8601DateTime, $till: ISO8601DateTime) {\r\n  ethereum(network: $network) {\r\n    dexTrades(\r\n      options: {desc: \"count\", limit: $limit, offset: $offset}\r\n      date: {since: $from, till: $till}\r\n      sellCurrency: {is: \"0x2791bca1f2de4661ed88a30c99a7a9449aa84174\"}\r\n    ) {\r\n      sellCurrency {\r\n        symbol\r\n        address\r\n      }\r\n      sellAmount\r\n      buyCurrency {\r\n        symbol\r\n        address\r\n      }\r\n      buyAmount\r\n      average_buyAmount: buyAmount(calculate: average)\r\n      count\r\n      median_price: price(calculate: median)\r\n      last_price: maximum(of: block, get: price)\r\n      price\r\n      dates: count(uniq: dates)\r\n      started: minimum(of: date)\r\n    }\r\n  }\r\n}",
+            variables: { "limit": 100, "offset": 0, "network": "matic", "from": DaysAgo, "till": rightNow, "dateFormat": "%Y-%m-%d" }
+          });
+          var requestOptions = {
+            method: 'POST',
+            headers: myHeaders,
+            body: graphql,
+            redirect: 'follow'
+          };
+
+          try {
+            let res = await fetch("https://graphql.bitquery.io", requestOptions);
+            return await res.json();
+          } catch (error) {
+            console.log(error);
+          }
+        }
+
+      async function createSwapCards() {
+
+        let html = '';
+
+        //Get the data from the call 
+        let tradeData = await getTrades();
+
+        let trades = tradeData.data.ethereum.dexTrades;
+
+        //Create a List of Swaps
+        let swaps = [];
+
+        trades.forEach(trade => {
+
+          //setVolatility Score of Coin
+          let volatilityScore;
+
+          if (trade.median_price > trade.last_price) {
+            volatilityScore = trade.median_price - trade.last_price; // / trade.count;
+            // volatilityScore = volatilityScore * trade.price / trade.count;
+          } else {
+            volatilityScore = trade.last_price - trade.median_price / trade.count;
+            //volatilityScore = volatilityScore * trade.price / trade.count;
+          }
+
+          //Send Coin Details to swapsList
+          swaps.push({
+            symbol: `${trade.buyCurrency.symbol}`,
+            address: `${trade.buyCurrency.address.toString()}`,
+            tradeCount: `${trade.count}`,
+            volatilityScore: volatilityScore.toFixed(5),
+          });
+
+        });
+
+        // Sort SwapsList by volatilityScore
+        swaps.sort(function (a, b) {
+          return a.volatilityScore - b.volatilityScore;
+        });
+        swaps.reverse();
+
+        //Build Swap Cards
+        swaps.forEach(swap => {
+          let htmlSegment = `<div class="swap_card" onClick="swapClick(this,'${swap.address}')">
+                        <div class="token_img">
+                          <img src='$logo' alt='' />
+                        </div>
+                        <div class='details_left'>
+                          <div class='symbol'>
+                            ${swap.symbol}
+                          </div>
+                          <div class='label'>
+                            T${swap.tradeCount}
+                          </div>
+                        </div>
+                        <div class='details_right'>
+                          <div class='score'>
+                            ${swap.volatilityScore}
+                          </div>
+                          <div class='label'>
+                            VOLATILITY
+                          </div>
+                        </div>
+                      </div>`;
+
+          html += htmlSegment;
+          $('.swaps').empty();
+          $('.swaps').prepend(html);
+        });
+      }
+
+      async function testClick() {
+        
+        async function getTokenAndContract(_token0Address, _token1Address) {
+          const token0Contract = new web3.eth.Contract(IERC20.abi, _token0Address)
+          const token1Contract = new web3.eth.Contract(IERC20.abi, _token1Address)
+
+          const token0 = new Token(
+            ChainId.MAINNET,
+            _token0Address,
+            await token0Contract.methods.decimals().call(),
+            await token0Contract.methods.symbol().call(),
+            await token0Contract.methods.name().call(),
+          )
+
+          const token1 = new Token(
+            ChainId.MAINNET,
+            _token1Address,
+            await token1Contract.methods.decimals().call(),
+            await token1Contract.methods.symbol().call(),
+            await token1Contract.methods.name().call(),
+          )
+
+          return { token0Contract, token1Contract, token0, token1 }
+        }
+
+        const checkPrice = async (exchange, token0, token1) => {
+          isExecuting = true
+
+          console.log(`Swap Initiated on ${exchange}, Checking Price...\n`)
+
+          const currentBlock = await web3.eth.getBlockNumber()
+
+          const uPrice = await calculatePrice(uPair, token0, token1)
+          const sPrice = await calculatePrice(sPair, token0, token1)
+
+          const uFPrice = Number(uPrice).toFixed(units)
+          const sFPrice = Number(sPrice).toFixed(units)
+          const priceDifference = (((uFPrice - sFPrice) / sFPrice) * 100).toFixed(2)
+
+          console.log(`Current Block: ${currentBlock}`)
+          console.log(`-----------------------------------------`)
+          console.log(`UNISWAP   | ${token1.symbol}/${token0.symbol}\t | ${uFPrice}`)
+          console.log(`SUSHISWAP | ${token1.symbol}/${token0.symbol}\t | ${sFPrice}\n`)
+          console.log(`Percentage Difference: ${priceDifference}%\n`)
+          // console.log(`Token0 Decimals | ${token0.decimals}\n`)
+          // console.log(`Token1 Decimals | ${token1.decimals}`)
+
+          return priceDifference
+        }
+
+      };
+      createSwapCards();
     </script>
   </head>
   <body>

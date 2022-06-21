@@ -18,103 +18,7 @@ import $ from 'jquery';
 //   return res.json
 // }
 
-async function getTrades() {
-  //Get Trade Data
-  var myHeaders = new Headers();
-  myHeaders.append("X-API-KEY", "BQYs9KbLZIw9YDmWFPLx42fBWjZFtanL");
-  myHeaders.append("Content-Type", "application/json");
 
-  var graphql = JSON.stringify({
-    query: "query ($network: EthereumNetwork!, $limit: Int!, $offset: Int!, $from: ISO8601DateTime, $till: ISO8601DateTime) {\r\n  ethereum(network: $network) {\r\n    dexTrades(\r\n      options: {desc: \"count\", limit: $limit, offset: $offset}\r\n      date: {since: $from, till: $till}\r\n      sellCurrency: {is: \"0x2791bca1f2de4661ed88a30c99a7a9449aa84174\"}\r\n    ) {\r\n      sellCurrency {\r\n        symbol\r\n        address\r\n      }\r\n      sellAmount\r\n      buyCurrency {\r\n        symbol\r\n        address\r\n      }\r\n      buyAmount\r\n      average_buyAmount: buyAmount(calculate: average)\r\n      count\r\n      median_price: price(calculate: median)\r\n      last_price: maximum(of: block, get: price)\r\n      price\r\n      dates: count(uniq: dates)\r\n      started: minimum(of: date)\r\n    }\r\n  }\r\n}",
-    variables: {"limit":100,"offset":0,"network":"matic","from":"2022-06-10","till":"2022-06-17T23:59:59","dateFormat":"%Y-%m-%d"}
-  });
-  var requestOptions = {
-    method: 'POST',
-    headers: myHeaders,
-    body: graphql,
-    redirect: 'follow'
-  };
-
-  try {
-      let res = await fetch("https://graphql.bitquery.io", requestOptions);
-      return await res.json();
-  } catch (error) {
-      console.log(error);
-  }
-}
-
-async function createSwapCards() {
-
-    let html = '';
-
-    //Get the data from the call 
-    let tradeData = await getTrades();
-
-    let trades = tradeData.data.ethereum.dexTrades;
-
-    //Create a List of Swaps
-    let swaps = [];    
-
-    trades.forEach(trade => {
-
-        //setVolatility Score of Coin
-        let volatilityScore;
-
-        if(trade.median_price > trade.last_price) {
-          volatilityScore = trade.median_price - trade.last_price; // / trade.count;
-          // volatilityScore = volatilityScore * trade.price / trade.count;
-        } else {
-          volatilityScore = trade.last_price - trade.median_price / trade.count;
-          //volatilityScore = volatilityScore * trade.price / trade.count;
-        }
-        
-        //Send Coin Details to swapsList
-        swaps.push({
-          symbol : `${trade.buyCurrency.symbol}`,
-          address : `${trade.buyCurrency.address.toString()}`,
-          tradeCount : `${trade.count}`,
-          volatilityScore : volatilityScore.toFixed(5),
-        });
-
-    });
-
-    // Sort SwapsList by volatilityScore
-    swaps.sort(function (a, b) {
-      return a.volatilityScore - b.volatilityScore;
-    });
-    swaps.reverse();
-
-    //Build Swap Cards
-    swaps.forEach(swap => {
-      let htmlSegment = `<div class="swap_card" onClick="swapClick('${swap.address}')">
-                          <div class="token_img">
-                            <img src='$logo' alt='' />
-                          </div>
-                          <div class='details_left'>
-                            <div class='symbol'>
-                              ${swap.symbol}
-                            </div>
-                            <div class='label'>
-                              T${swap.tradeCount}
-                            </div>
-                          </div>
-                          <div class='details_right'>
-                            <div class='score'>
-                              ${swap.volatilityScore}
-                            </div>
-                            <div class='label'>
-                              VOLATILITY
-                            </div>
-                          </div>
-                        </div>`;
-
-      html += htmlSegment;
-      $('.swaps').empty();
-      $('.swaps').prepend(html);
-    });
-}
-
-createSwapCards();
 
 // async function getExchanges(_tokenAddress) {
 
@@ -454,7 +358,7 @@ function App() {
           </div>
 
           <div className='sells'>
-            
+
           </div>
 
         </div>
