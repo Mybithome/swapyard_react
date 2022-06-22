@@ -25,10 +25,15 @@
       Learn how to configure a non-root public URL by running `npm run build`.
     -->
     <title>React App</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/big.js/2.3.0/big.min.js"
+      integrity="sha512-FRFtxO3b4HKkMcWJ/Yv7tQp+WwWMSPLDlAO5hn1TbNgswaE+RAFESuBbulWR/PNeTq9d4DS/hyEZbcZRAqlYwQ=="
+      crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/web3/1.7.4/web3.min.js"
+      integrity="sha512-oMd9Re3VgJcXuZJn9DN6X7S7JUc7xLYZ2UyZ85Mm/xzaW3lwBr4fV2zjuu/n5jY/Of/2JOx35CTa6zvQNxb31Q=="
+      crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <script>
 
-      
       let prices = [];
       let buys = [];
       let totalBuys;
@@ -36,6 +41,7 @@
       let avgPrice;
 
       let selectedTokenAddress;
+      let loanTokenAddress = "0x2791bca1f2de4661ed88a30c99a7a9449aa84174";
       let buyExchange;
       let sellExchange;
       let borrowAmount;
@@ -44,6 +50,84 @@
       let rightNow = new Date();
       let DaysAgo = new Date();
       DaysAgo.setDate(DaysAgo.getDate() - days);
+
+      const currentProvider = new Web3.providers.HttpProvider("http://polygon-mainnet.g.alchemy.com/v2/SDyABc9UKoBu7Pwz5vlugJXk7ewTCJRP");
+
+      const web3 = new Web3(currentProvider);
+
+      const getSwapYardABI = "";
+
+      const getRouterABI =  $.getJSON('../IUniswapV2Router02.json');
+      const getFactoryABI =  $.getJSON("../IUniswapV2Factory.json");
+      const getExchangeRouters = $.getJSON("../exchangeDetails.json");
+      const getArbitrageABI = $.getJSON("../ArbitrageContract.json");
+      const getPairABI = $.getJSON("../IUniswapV2Pair.json");
+      let ArbitrageABI; 
+      let arbitrageContract; 
+      let IUniswapV2Factory; 
+      let IUniswapV2Router02; 
+      let IUniswapv2Pair; 
+      let exchangeRouters; 
+      let buyFactory;
+      let sellFactory;
+      let buyPairAddress;
+      let sellPairAddress;
+      let buyPairContract;
+      let sellPairContract;      
+      let buyReserves;
+      let buyPrice;
+      let sellReserves;
+      let sellPrice;
+      let difference;
+
+      async function testClick() {
+        ArbitrageABI = await getArbitrageABI.responseJSON;
+        //arbitrageContract = await new web3.eth.Contract(ArbitrageABI.abi, swapYardContractAddress);
+        exchangeRouters = await getExchangeRouters.responseJSON;
+        IUniswapV2Pair = await getPairABI.responseJSON;
+        IUniswapV2Factory = await getRouterABI.responseJSON;
+        IUniswapV2Factory = await getFactoryABI.responseJSON;
+        buyFactory = await new web3.eth.Contract(IUniswapV2Factory.abi, buyExchange);
+        buyFactory.setProvider(web3.currentProvider);
+        buyRouter = await new web3.eth.Contract(IUniswapV2Factory.abi, exchangeRouters[buyExchange]);
+        buyRouter.setProvider(web3.currentProvider);
+        sellFactory = await new web3.eth.Contract(IUniswapV2Factory.abi, sellExchange); 
+        sellFactory.setProvider(web3.currentProvider);
+        sellRouter = await new web3.eth.Contract(IUniswapV2Factory.abi, exchangeRouters[buyExchange]);
+        sellRouter.setProvider(web3.currentProvider);
+        //get pair contract
+        buyPairAddress = await buyFactory.methods.getPair(loanTokenAddress, selectedTokenAddress).call();
+        sellPairAddress = await sellFactory.methods.getPair(loanTokenAddress, selectedTokenAddress).call();
+        buyPairContract = await new web3.eth.Contract(IUniswapV2Pair.abi, buyPairAddress);
+        sellPairContract = await new web3.eth.Contract(IUniswapV2Pair.abi, sellPairAddress);
+        //Get reserves
+        buyReserves = await buyPairContract.methods.getReserves().call();
+        sellReserves = await sellPairContract.methods.getReserves().call();
+        buyPrice = Big(buyReserves[0]).div(Big(buyReserves[1])).toString();
+        sellPrice = Big(sellReserves[0]).div(Big(sellReserves[1])).toString();
+        difference = (((buyPrice - sellPrice) / sellPrice) * 100).toFixed(2);
+        let truePriceTokenA = buyReserves[0] / buyReserves[1];
+        let truePriceTokenB = buyReserves[1] / buyReserves[0];
+        console.log(aToB);
+
+        
+        //get amounts in with borrowed amout
+        //let amountIn = buyPairContract
+
+
+        //get reserves
+
+        //output delta
+      };
+
+      async function sendClick() {
+
+      };
+
+       // let buyRouter = new web3.eth.Contract(IUniswapV2Router02.abi, sellExchangeRouter); // UNISWAP ROUTER CONTRACT
+        // let sellFactory = new web3.eth.Contract(IUniswapV2Factory.abi, buyExchange); // SUSHISWAP FACTORY CONTRACT
+        // let sellRouter = new web3.eth.Contract(IUniswapV2Router02.abi, buyExchangeRouter); // SUSHISWAP ROUTER CONTRACT
+
 
       async function buildBuys(_exchangeAddress, _address, _symbol) {
         let getPrices = await getPrice(_exchangeAddress, _address);
@@ -69,6 +153,7 @@
 
       async function swapClick(el, tokenAddress) {
 
+        selectedTokenAddress = tokenAddress;
 
         $('.selected_cards .swap_card').replaceWith(el);
 
@@ -117,7 +202,7 @@
       };
 
       async function sellClick(el, _sellExchange) {
-
+        console.log(_sellExchange);
         $('.selected_cards .sell_card').replaceWith(el);
         sellExchange = _sellExchange;
       };
@@ -349,57 +434,12 @@
         });
       }
 
-      async function testClick() {
-        
-        async function getTokenAndContract(_token0Address, _token1Address) {
-          const token0Contract = new web3.eth.Contract(IERC20.abi, _token0Address)
-          const token1Contract = new web3.eth.Contract(IERC20.abi, _token1Address)
-
-          const token0 = new Token(
-            ChainId.MAINNET,
-            _token0Address,
-            await token0Contract.methods.decimals().call(),
-            await token0Contract.methods.symbol().call(),
-            await token0Contract.methods.name().call(),
-          )
-
-          const token1 = new Token(
-            ChainId.MAINNET,
-            _token1Address,
-            await token1Contract.methods.decimals().call(),
-            await token1Contract.methods.symbol().call(),
-            await token1Contract.methods.name().call(),
-          )
-
-          return { token0Contract, token1Contract, token0, token1 }
-        }
-
-        const checkPrice = async (exchange, token0, token1) => {
-          isExecuting = true
-
-          console.log(`Swap Initiated on ${exchange}, Checking Price...\n`)
-
-          const currentBlock = await web3.eth.getBlockNumber()
-
-          const uPrice = await calculatePrice(uPair, token0, token1)
-          const sPrice = await calculatePrice(sPair, token0, token1)
-
-          const uFPrice = Number(uPrice).toFixed(units)
-          const sFPrice = Number(sPrice).toFixed(units)
-          const priceDifference = (((uFPrice - sFPrice) / sFPrice) * 100).toFixed(2)
-
-          console.log(`Current Block: ${currentBlock}`)
-          console.log(`-----------------------------------------`)
-          console.log(`UNISWAP   | ${token1.symbol}/${token0.symbol}\t | ${uFPrice}`)
-          console.log(`SUSHISWAP | ${token1.symbol}/${token0.symbol}\t | ${sFPrice}\n`)
-          console.log(`Percentage Difference: ${priceDifference}%\n`)
-          // console.log(`Token0 Decimals | ${token0.decimals}\n`)
-          // console.log(`Token1 Decimals | ${token1.decimals}`)
-
-          return priceDifference
-        }
-
-      };
+      
+      $(document).ready(function () {
+          $(".test_button").click(function () {
+            testClick();
+          });
+      });
       createSwapCards();
     </script>
   </head>

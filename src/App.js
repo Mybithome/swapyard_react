@@ -1,11 +1,12 @@
 import { type } from '@testing-library/user-event/dist/type';
 import './App.css';
-import $ from 'jquery';
 
 
 
 
+//const Web3 = require('web3');
  
+        //const web3 = new Web3(`https://polygon-mainnet.g.alchemy.com/v2/SDyABc9UKoBu7Pwz5vlugJXk7ewTCJRP`);
 
 
 
