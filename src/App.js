@@ -374,7 +374,7 @@ function App() {
                   <img src='' alt=''></img>
               </div>
               <div className='borrow_amount'>
-                  $987
+                10000
               </div>
               <div className='borrow_more'>
                   <img src='' alt=''></img>

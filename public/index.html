@@ -51,7 +51,7 @@
       let DaysAgo = new Date();
       DaysAgo.setDate(DaysAgo.getDate() - days);
 
-      const currentProvider = new Web3("ws://127.0.0.1:8545"); //http://polygon-mainnet.g.alchemy.com/v2/SDyABc9UKoBu7Pwz5vlugJXk7ewTCJRP
+      const currentProvider = new Web3("http://polygon-mainnet.g.alchemy.com/v2/SDyABc9UKoBu7Pwz5vlugJXk7ewTCJRP"); //http://polygon-mainnet.g.alchemy.com/v2/SDyABc9UKoBu7Pwz5vlugJXk7ewTCJRP
 
       const web3 = new Web3(currentProvider);
 
@@ -217,7 +217,7 @@
 
         // Display Results
         setTimeout(function () {
-          $('.reserve_delta .label_right').html(difference);
+          $('.reserves_delta .label_right').html(difference);
 
           $('.buy_return  .label_right').html(buyAmountsOut[0]);
 
