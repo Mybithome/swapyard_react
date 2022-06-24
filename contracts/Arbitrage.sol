@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >= 0.5.0 <= 0.8.13;
+pragma solidity >= 0.6.6;
 
-import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
-import '@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol';
-import '@uniswap/lib/contracts/libraries/Babylonian.sol';
-import '@uniswap/lib/contracts/libraries/TransferHelper.sol';
+import "./IUniswapV2Router02.sol";
+import './IUniswapV2Pair.sol';
+import './Babylonian.sol';
+import './TransferHelper.sol';
 
-import '@uniswap/v2-periphery/contracts/libraries/UniswapV2LiquidityMathLibrary.sol';
-import '@uniswap/v2-periphery/contracts/interfaces/IERC20.sol';
-import '@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router01.sol';
-import '@uniswap/v2-periphery/contracts/libraries/SafeMath.sol';
-import '@uniswap/v2-periphery/contracts/libraries/UniswapV2Library.sol';
+import './UniswapV2LiquidityMathLibrary.sol';
+import './IERC20.sol';
+import './SafeMath.sol';
+import './IUniswapV2Router01.sol';
+import './UniswapV2Library.sol';
 
 
 interface IDODO {
@@ -27,8 +27,8 @@ interface IDODO {
 
 contract Arbitrage {
 
-    IUniswapV2Router02 public immutable buyRouter;
-    IUniswapV2Router02 public immutable sellRouter;
+    IUniswapV2Router02 public  buyRouter;
+    IUniswapV2Router02 public  sellRouter;
 
     address public owner;
     // It's easy to get lost so here is the basic route of the FlashLoan
@@ -45,13 +45,13 @@ contract Arbitrage {
 
     address token1,
     uint256 balanceBefore, 
-    address buyRouter,
-    address sellRouter
+    address _buyRouter,
+    address _sellRouter
 
     ) internal  {
 
         // Custom Structured Data
-        bytes memory data = abi.encode(flashLoanPool, loanToken, loanAmount, token1, balanceBefore, buyRouter, sellRouter);
+        bytes memory data = abi.encode(flashLoanPool, loanToken, loanAmount, token1, balanceBefore, _buyRouter, _sellRouter);
 
         //DODO 
         address flashLoanBase = IDODO(flashLoanPool)._BASE_TOKEN_();
@@ -89,9 +89,8 @@ contract Arbitrage {
         uint256 truePriceTokenB,
         uint256 maxSpendTokenA,
         uint256 maxSpendTokenB,
-        address router,
         address factory
-    ) public returns (amountIn) {
+    ) public view returns (uint256) {
         // true price is expressed as a ratio, so both values must be non-zero
         require(truePriceTokenA != 0 && truePriceTokenB != 0, "ExampleSwapToPrice: ZERO_PRICE");
         // caller can specify 0 for either if they wish to swap in only one direction, but not both
@@ -202,8 +201,9 @@ contract Arbitrage {
             _sellRouter
         );      
 
-        uint256 arbitrageReturns = IERC20(token0).balanceOf(address(this) - (flashAmount + 1));
-        uint256 swapyardfee = arbitrageReturns.mul(997);
+        uint256 balanceAfterSwap = IERC20(token0).balanceOf(address(this));
+        uint256 arbitrageReturns = balanceAfterSwap - (flashAmount + 1);
+        uint256 swapyardfee = arbitrageReturns * 997;
         uint256 profit = arbitrageReturns - swapyardfee;
 
         // Withdraw Profit

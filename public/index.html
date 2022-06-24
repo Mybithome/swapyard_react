@@ -51,17 +51,16 @@
       let DaysAgo = new Date();
       DaysAgo.setDate(DaysAgo.getDate() - days);
 
-      const currentProvider = new Web3.providers.HttpProvider("http://polygon-mainnet.g.alchemy.com/v2/SDyABc9UKoBu7Pwz5vlugJXk7ewTCJRP");
+      const currentProvider = new Web3("ws://127.0.0.1:8545"); //http://polygon-mainnet.g.alchemy.com/v2/SDyABc9UKoBu7Pwz5vlugJXk7ewTCJRP
 
       const web3 = new Web3(currentProvider);
 
-      const getSwapYardABI = "";
-
-      const getRouterABI =  $.getJSON('../IUniswapV2Router02.json');
-      const getFactoryABI =  $.getJSON("../IUniswapV2Factory.json");
+      const getRouterABI =  $.getJSON('../contracts/IUniswapV2Router02.json');
+      const getFactoryABI =  $.getJSON("../contracts/IUniswapV2Factory.json");
       const getExchangeRouters = $.getJSON("../exchangeDetails.json");
-      const getArbitrageABI = $.getJSON("../ArbitrageContract.json");
-      const getPairABI = $.getJSON("../IUniswapV2Pair.json");
+      const getArbitrageABI = $.getJSON("../contracts/Arbitrage.json");
+      const getPairABI = $.getJSON("../contracts/IUniswapV2Pair.json");
+
       let ArbitrageABI; 
       let arbitrageContract; 
       let IUniswapV2Factory; 
@@ -76,13 +75,22 @@
       let sellPairContract;      
       let buyReserves;
       let buyPrice;
+      let calcBuyPrice;
       let sellReserves;
       let sellPrice;
+      let calcSellPrice;
       let difference;
+      let buyAmountMax;
+      let trueBuyPriceTokenA;
+      let trueBuyPriceTokenB;
+      let trueSellPriceTokenA;
+      let trueSellPriceTokenB;
+      let maxBuySpend;
+      let maxSellSpend;
 
       async function testClick() {
         ArbitrageABI = await getArbitrageABI.responseJSON;
-        //arbitrageContract = await new web3.eth.Contract(ArbitrageABI.abi, swapYardContractAddress);
+        arbitrageContract = await new web3.eth.Contract(ArbitrageABI.abi, "0x888A26B21665a325Cb9A05E172cF6B8A4c02F4d8");
         exchangeRouters = await getExchangeRouters.responseJSON;
         IUniswapV2Pair = await getPairABI.responseJSON;
         IUniswapV2Factory = await getRouterABI.responseJSON;
@@ -103,13 +111,98 @@
         //Get reserves
         buyReserves = await buyPairContract.methods.getReserves().call();
         sellReserves = await sellPairContract.methods.getReserves().call();
-        buyPrice = Big(buyReserves[0]).div(Big(buyReserves[1])).toString();
-        sellPrice = Big(sellReserves[0]).div(Big(sellReserves[1])).toString();
-        difference = (((buyPrice - sellPrice) / sellPrice) * 100).toFixed(2);
-        let truePriceTokenA = buyReserves[0] / buyReserves[1];
-        let truePriceTokenB = buyReserves[1] / buyReserves[0];
-        console.log(truePriceTokenA+":"+truePriceTokenB);
-
+        calcBuyPrice = Big(buyReserves[0]).div(Big(buyReserves[1])).toString();
+        calcSellPrice = Big(sellReserves[0]).div(Big(sellReserves[1])).toString();
+        difference = (((calcBuyPrice - calcSellPrice) / calcSellPrice) * 100).toFixed(2);
+        if (buyPrice < 1 ) {
+          trueBuyPriceTokenA = 100000000000000000;
+          trueBuyPriceTokenB = buyPrice * 100000000000000000;
+        } else if (buyPrice > 10 ) {
+          trueBuyPriceTokenA = 10000000000000000;
+          trueBuyPriceTokenB = buyPrice * 10000000000000000;
+        } else if (buyPrice > 100) {
+          trueBuyPriceTokenA = 1000000000000000;
+          trueBuyPriceTokenB = buyPrice * 1000000000000000;
+        } else if (buyPrice > 1000) {
+          trueBuyPriceTokenA = 100000000000000;
+          trueBuyPriceTokenB = buyPrice * 100000000000000;
+        } else if(buyPrice > 10000) {
+          trueBuyPriceTokenA = 10000000000000;
+          trueBuyPriceTokenB = buyPrice * 10000000000000;
+        } else if(buyPrice > 100000) {
+          trueBuyPriceTokenA = 1000000000000;
+          trueBuyPriceTokenB = buyPrice * 1000000000000;
+        } else if(buyPrice > 1000000) {
+          trueBuyPriceTokenA = 100000000000;
+          trueBuyPriceTokenB = buyPrice * 100000000000;
+        } else if(buyPrice > 10000000) {
+          trueBuyPriceTokenA = 10000000000;
+          trueBuyPriceTokenB = buyPrice * 10000000000;
+        } else if(buyPrice > 100000000) {
+          trueBuyPriceTokenA = 1000000000;
+          trueBuyPriceTokenB = buyPrice * 1000000000;
+        } else if(buyPrice > 1000000000) {
+          trueBuyPriceTokenA = 100000000;
+          trueBuyPriceTokenB = buyPrice * 100000000;
+        } else if(buyPrice > 10000000000) {
+          trueBuyPriceTokenA = 10000000;
+          trueBuyPriceTokenB = buyPrice * 10000000;
+        } else if(buyPrice > 100000000000) {
+          trueBuyPriceTokenA = 1000000;
+          trueBuyPriceTokenB = buyPrice * 1000000;
+        } else if(buyPrice > 1000000000000) {
+          trueBuyPriceTokenA = 100000;
+          trueBuyPriceTokenB = buyPrice * 100000;
+        }
+        if (sellPrice < 1) {
+          trueSellPriceTokenA = 100000000000000000;
+          trueSellPriceTokenB = sellPrice * 100000000000000000;
+        } else if (sellPrice > 10) {
+          trueSellPriceTokenA = 10000000000000000;
+          trueSellPriceTokenB = sellPrice * 10000000000000000;
+        } else if (sellPrice > 100) {
+          trueSellPriceTokenA = 1000000000000000;
+          trueSellPriceTokenB = sellPrice * 1000000000000000;
+        } else if (sellPrice > 1000) {
+          trueSellPriceTokenA = 100000000000000;
+          trueSellPriceTokenB = sellPrice * 100000000000000;
+        } else if (sellPrice > 10000) {
+          trueSellPriceTokenA = 10000000000000;
+          trueSellPriceTokenB = sellPrice * 10000000000000;
+        } else if (sellPrice > 100000) {
+          trueSellPriceTokenA = 1000000000000;
+          trueSellPriceTokenB = sellPrice * 1000000000000;
+        } else if (sellPrice > 1000000) {
+          trueSellPriceTokenA = 100000000000;
+          trueSellPriceTokenB = sellPrice * 100000000000;
+        } else if (sellPrice > 10000000) {
+          trueSellPriceTokenA = 10000000000;
+          trueSellPriceTokenB = sellPrice * 10000000000;
+        } else if (sellPrice > 100000000) {
+          trueSellPriceTokenA = 1000000000;
+          trueSellPriceTokenB = sellPrice * 1000000000;
+        } else if (sellPrice > 1000000000) {
+          trueSellPriceTokenA = 100000000;
+          trueSellPriceTokenB = sellPrice * 100000000;
+        } else if (sellPrice > 10000000000) {
+          trueSellPriceTokenA = 10000000;
+          trueSellPriceTokenB = sellPrice * 10000000;
+        } else if (sellPrice > 100000000000) {
+          trueSellPriceTokenA = 1000000;
+          trueSellPriceTokenB = sellPrice * 1000000;
+        } else if (sellPrice > 1000000000000) {
+          trueSellPriceTokenA = 100000;
+          trueSellPriceTokenB = sellPrice * 100000;
+        }
+        
+        maxBuySpend = 1000000;
+        //Get OptimumSwapAmount
+        
+        buyAmountMax = await arbitrageContract.methods.getMaxSwap(loanTokenAddress,selectedTokenAddress,trueBuyPriceTokenA.toFixed(0).toString(),trueBuyPriceTokenB.toFixed(0).toString(),maxBuySpend.toString(), web3.utils.BN(0), buyExchange).call();
+        
+        maxSellSpend = buyAmountMax * sellPrice;
+        sellAmountMax = await arbitrageContract.methods.getMaxSwap(selectedTokenAddress, loanTokenAddress, trueSellPriceTokenB.toFixed(0).toString(), trueSellPriceTokenA.toFixed(0).toString(), maxSellSpend.toString(), web3.utils.BN(0), sellExchange).call();
+        //sellAmountMax = arbitrageContract.getMaxSwap();
         
         //get amounts in with borrowed amout
         //let amountIn = buyPairContract
@@ -195,13 +288,16 @@
 
       };
 
-      async function buyClick(el, _buyExchange) {
+      async function buyClick(el, _buyExchange, _buyPrice) {
 
-        $('.selected_cards .buy_card').replaceWith(el);
+      buyPrice = _buyPrice;
+
+      $('.selected_cards .buy_card').replaceWith(el);
         buyExchange = _buyExchange;
       };
 
-      async function sellClick(el, _sellExchange) {
+      async function sellClick(el, _sellExchange, _sellPrice) {
+        sellPrice = _sellPrice;
         console.log(_sellExchange);
         $('.selected_cards .sell_card').replaceWith(el);
         sellExchange = _sellExchange;
@@ -217,7 +313,7 @@
 
             priceDelta = Number(priceDelta).toFixed(6);
             html = '';
-            let htmlSegment = `<div class="sell_card" onClick="sellClick(this, '${_buys[i].exchangeAddress}')">
+            let htmlSegment = `<div class="sell_card" onClick="sellClick(this, '${_buys[i].exchangeAddress}', ${_buys[i].price})">
                                 <div class="token_img">
                                   <img src='$logo' alt='' />
                                 </div>
@@ -254,7 +350,7 @@
 
             priceDelta = Number(priceDelta).toFixed(6);
             html = '';
-            let htmlSegment = `<div class="buy_card" onClick="buyClick(this, '${_buys[i].exchangeAddress}')">
+            let htmlSegment = `<div class="buy_card" onClick="buyClick(this, '${_buys[i].exchangeAddress}', ${_buys[i].price})">
                                 <div class="token_img">
                                   <img src='$logo' alt='' />
                                 </div>
@@ -285,7 +381,7 @@
 
           //Get Exchanges With Currency
           var myHeaders = new Headers();
-          myHeaders.append("X-API-KEY", "BQYs9KbLZIw9YDmWFPLx42fBWjZFtanL");
+          myHeaders.append("X-API-KEY", "BQYKwXxx3N1v4QK8q8i4wSW8x3murMYp");
           myHeaders.append("Content-Type", "application/json");
 
           var graphql = JSON.stringify({
@@ -313,7 +409,7 @@
 
         //Get Exchanges With Currency
         var myHeaders = new Headers();
-        myHeaders.append("X-API-KEY", "BQYs9KbLZIw9YDmWFPLx42fBWjZFtanL");
+        myHeaders.append("X-API-KEY", "BQYKwXxx3N1v4QK8q8i4wSW8x3murMYp");
         myHeaders.append("Content-Type", "application/json");
 
         
@@ -341,7 +437,7 @@
       async function getTrades() {
           //Get Trade Data
           var myHeaders = new Headers();
-          myHeaders.append("X-API-KEY", "BQYs9KbLZIw9YDmWFPLx42fBWjZFtanL");
+          myHeaders.append("X-API-KEY", "BQYKwXxx3N1v4QK8q8i4wSW8x3murMYp");
           myHeaders.append("Content-Type", "application/json");
 
           var graphql = JSON.stringify({
