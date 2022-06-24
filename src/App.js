@@ -449,24 +449,32 @@ function App() {
             </div>
             </div>
           </div>
-
-          <div className='trade_details profit'>
+          <div className='trade_details reserves_delta'>
               <div className='label_left'>
-                PROFIT
+                RERSERVE DELTA
               </div>
               <div className='label_right'>
                 6546
               </div>
           </div>
-          <div className='trade_details fees'>
+
+          <div className='trade_details buy_return'>
               <div className='label_left'>
-                FEES
+                BUY AMOUNT
+              </div>
+              <div className='label_right'>
+                6546
+              </div>
+          </div>
+          <div className='trade_details sell_return'>
+              <div className='label_left'>
+                SELL RETURN
               </div>
               <div className='label_right'>
                 654156  
               </div>
           </div>
-          <div className='trade_details return'>
+          <div className='trade_details estimated_return'>
               <div className='label_left'>
                 EST RETURN
               </div>
@@ -479,17 +487,17 @@ function App() {
                 EST GAS
               </div>
               <div className='label_right'>
-                354135  
+                35
               </div>
           </div>
-          <div className='trade_details slippage'>
+          {/* <div className='trade_details slippage'>
               <div className='label_left'>
                 EST SLIPPAGE
               </div>
               <div className='label_right'>
                 652%    
               </div>
-          </div>
+          </div> */}
           
           <div className='test_button'>
               TEST

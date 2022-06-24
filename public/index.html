@@ -87,21 +87,24 @@
       let trueSellPriceTokenB;
       let maxBuySpend;
       let maxSellSpend;
+      let path = [];
+      let buyAmountsOut;
+      let sellAmountsOut;
 
       async function testClick() {
         ArbitrageABI = await getArbitrageABI.responseJSON;
-        arbitrageContract = await new web3.eth.Contract(ArbitrageABI.abi, "0x888A26B21665a325Cb9A05E172cF6B8A4c02F4d8");
+        arbitrageContract = await new web3.eth.Contract(ArbitrageABI.abi, "0x0D05bAea979891e8dCD257495F08f7825a11aae9");
         exchangeRouters = await getExchangeRouters.responseJSON;
         IUniswapV2Pair = await getPairABI.responseJSON;
-        IUniswapV2Factory = await getRouterABI.responseJSON;
+        IUniswapV2Router = await getRouterABI.responseJSON;
         IUniswapV2Factory = await getFactoryABI.responseJSON;
         buyFactory = await new web3.eth.Contract(IUniswapV2Factory.abi, buyExchange);
         buyFactory.setProvider(web3.currentProvider);
-        buyRouter = await new web3.eth.Contract(IUniswapV2Factory.abi, exchangeRouters[buyExchange]);
+        buyRouter = await new web3.eth.Contract(IUniswapV2Router.abi, exchangeRouters[buyExchange]);
         buyRouter.setProvider(web3.currentProvider);
         sellFactory = await new web3.eth.Contract(IUniswapV2Factory.abi, sellExchange); 
         sellFactory.setProvider(web3.currentProvider);
-        sellRouter = await new web3.eth.Contract(IUniswapV2Factory.abi, exchangeRouters[buyExchange]);
+        sellRouter = await new web3.eth.Contract(IUniswapV2Router.abi, exchangeRouters[sellExchange]);
         sellRouter.setProvider(web3.currentProvider);
         //get pair contract
         buyPairAddress = await buyFactory.methods.getPair(loanTokenAddress, selectedTokenAddress).call();
@@ -198,10 +201,35 @@
         maxBuySpend = 1000000;
         //Get OptimumSwapAmount
         
-        buyAmountMax = await arbitrageContract.methods.getMaxSwap(loanTokenAddress,selectedTokenAddress,trueBuyPriceTokenA.toFixed(0).toString(),trueBuyPriceTokenB.toFixed(0).toString(),maxBuySpend.toString(), web3.utils.BN(0), buyExchange).call();
+        path[0] = loanTokenAddress;
+        path[1] = selectedTokenAddress;
+
+        // Returns the maximum amount of selected tokens returned for the maxBuySpend.
+        buyAmountsOut = await buyRouter.methods.getAmountsOut( web3.utils.BN(maxBuySpend), path ).call();
+
+        path[0] = selectedTokenAddress;
+        path[1] = loanTokenAddress;
+
+        // Returns the maximum amount of loanTokens returned for the amount of selected Tokens returned by buyAmountsOut.
+        sellAmountsOut = await sellRouter.methods.getAmountsOut( web3.utils.BN(buyAmountsOut[1]), path ).call();
+
+        let testProfit = sellAmountsOut[1] - buyAmountsOut[0] ;
+
+        // Display Results
+        setTimeout(function () {
+          $('.reserve_delta .label_right').html(difference);
+
+          $('.buy_return  .label_right').html(buyAmountsOut[0]);
+
+          $('.sell_return .label_right').html(sellAmountsOut[1]);
+
+          $('.estimated_return .label_right').html(testProfit);
+         }, 1000);
         
-        maxSellSpend = buyAmountMax * sellPrice;
-        sellAmountMax = await arbitrageContract.methods.getMaxSwap(selectedTokenAddress, loanTokenAddress, trueSellPriceTokenB.toFixed(0).toString(), trueSellPriceTokenA.toFixed(0).toString(), maxSellSpend.toString(), web3.utils.BN(0), sellExchange).call();
+        //buyAmountMax = await arbitrageContract.methods.getMaxSwap(loanTokenAddress,selectedTokenAddress,trueBuyPriceTokenA.toFixed(0).toString(),trueBuyPriceTokenB.toFixed(0).toString(),maxBuySpend.toString(), web3.utils.BN(0), buyExchange).call();
+        
+        //maxSellSpend = buyAmountMax * sellPrice;
+        //sellAmountMax = await arbitrageContract.methods.getMaxSwap(selectedTokenAddress, loanTokenAddress, trueSellPriceTokenB.toFixed(0).toString(), trueSellPriceTokenA.toFixed(0).toString(), maxSellSpend.toString(), web3.utils.BN(0), sellExchange).call();
         //sellAmountMax = arbitrageContract.getMaxSwap();
         
         //get amounts in with borrowed amout
