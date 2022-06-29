@@ -51,6 +51,9 @@
       let DaysAgo = new Date();
       DaysAgo.setDate(DaysAgo.getDate() - days);
 
+      
+      //var fs = require('fs');
+
       const currentProvider = new Web3("http://polygon-mainnet.g.alchemy.com/v2/SDyABc9UKoBu7Pwz5vlugJXk7ewTCJRP"); //http://polygon-mainnet.g.alchemy.com/v2/SDyABc9UKoBu7Pwz5vlugJXk7ewTCJRP
 
       const web3 = new Web3(currentProvider);
@@ -60,6 +63,8 @@
       const getExchangeRouters = $.getJSON("../exchangeDetails.json");
       const getArbitrageABI = $.getJSON("../contracts/Arbitrage.json");
       const getPairABI = $.getJSON("../contracts/IUniswapV2Pair.json");
+      
+      const getSavedImages = $.getJSON('../coinImages.json');
 
       let ArbitrageABI; 
       let arbitrageContract; 
@@ -90,6 +95,12 @@
       let path = [];
       let buyAmountsOut;
       let sellAmountsOut;
+      let savedImages;
+      let imageUrl; 
+
+      maxBuySpend = 10000;
+
+      
 
       async function testClick() {
         ArbitrageABI = await getArbitrageABI.responseJSON;
@@ -198,7 +209,7 @@
           trueSellPriceTokenB = sellPrice * 100000;
         }
         
-        maxBuySpend = 1000000;
+        
         //Get OptimumSwapAmount
         
         path[0] = loanTokenAddress;
@@ -225,30 +236,70 @@
 
           $('.estimated_return .label_right').html(testProfit);
          }, 1000);
-        
-        //buyAmountMax = await arbitrageContract.methods.getMaxSwap(loanTokenAddress,selectedTokenAddress,trueBuyPriceTokenA.toFixed(0).toString(),trueBuyPriceTokenB.toFixed(0).toString(),maxBuySpend.toString(), web3.utils.BN(0), buyExchange).call();
-        
-        //maxSellSpend = buyAmountMax * sellPrice;
-        //sellAmountMax = await arbitrageContract.methods.getMaxSwap(selectedTokenAddress, loanTokenAddress, trueSellPriceTokenB.toFixed(0).toString(), trueSellPriceTokenA.toFixed(0).toString(), maxSellSpend.toString(), web3.utils.BN(0), sellExchange).call();
-        //sellAmountMax = arbitrageContract.getMaxSwap();
-        
-        //get amounts in with borrowed amout
-        //let amountIn = buyPairContract
-
-
-        //get reserves
-
-        //output delta
       };
 
       async function sendClick() {
 
       };
 
-       // let buyRouter = new web3.eth.Contract(IUniswapV2Router02.abi, sellExchangeRouter); // UNISWAP ROUTER CONTRACT
-        // let sellFactory = new web3.eth.Contract(IUniswapV2Factory.abi, buyExchange); // SUSHISWAP FACTORY CONTRACT
-        // let sellRouter = new web3.eth.Contract(IUniswapV2Router02.abi, buyExchangeRouter); // SUSHISWAP ROUTER CONTRACT
+      async function buyClick(el, _buyExchange, _buyPrice) {
 
+      buyPrice = _buyPrice;
+
+      $('.selected_cards .buy_card').replaceWith(el);
+        buyExchange = _buyExchange;
+      };
+
+      async function sellClick(el, _sellExchange, _sellPrice) {
+    sellPrice = _sellPrice;
+    console.log(_sellExchange);
+    $('.selected_cards .sell_card').replaceWith(el);
+    sellExchange = _sellExchange;
+  };
+
+      async function swapClick(el, tokenAddress) {
+
+    selectedTokenAddress = tokenAddress;
+
+    $('.selected_cards .swap_card').replaceWith(el);
+
+    //Get Exchange Data
+    let exchangeData = await getExchanges(tokenAddress);
+
+    let exchanges = exchangeData.data.ethereum.dexTrades;
+
+    for (i = 0; i < exchanges.length; i++) {
+
+      let exchangeAddress = exchanges[i].exchange.address.address;
+      let symbol = exchanges[i].baseCurrency.symbol;
+      buildBuys(exchangeAddress, tokenAddress, symbol);
+
+    };
+
+
+
+
+
+    setTimeout(function () {
+
+      // Get Average Price
+      let sum = prices.reduce((a, b) => a + b, 0);
+
+      console.log(sum);
+      avgPrice = sum / prices.length;
+      // Sort Buys by Price Desc
+      buys.sort(function (a, b) {
+        return a.price - b.price;
+      });
+      buys.reverse();
+      createBuys(buys);
+      buys.reverse();
+      createSells(buys);
+      buys = [];
+      prices = [];
+    }, 1000);
+
+  };
 
       async function buildBuys(_exchangeAddress, _address, _symbol) {
         let getPrices = await getPrice(_exchangeAddress, _address);
@@ -272,64 +323,83 @@
 
       };
 
-      async function swapClick(el, tokenAddress) {
+      async function createSwapCards() {
 
-        selectedTokenAddress = tokenAddress;
+        savedImages = await getSavedImages;
 
-        $('.selected_cards .swap_card').replaceWith(el);
+        let html = '';
 
-        //Get Exchange Data
-        let exchangeData = await getExchanges(tokenAddress);
+        //Get the data from the call 
+        let tradeData = await getTrades();
 
-        let exchanges = exchangeData.data.ethereum.dexTrades;
+        let trades = tradeData.data.ethereum.dexTrades;
 
-        for (i = 0; i < exchanges.length; i++) {
-          
-          let exchangeAddress = exchanges[i].exchange.address.address;
-          let symbol = exchanges[i].baseCurrency.symbol;
-          buildBuys(exchangeAddress, tokenAddress, symbol);
-          
-        };
-        
-        
+        //Create a List of Swaps
+        let swaps = [];
 
-          
+        trades.forEach(trade => {
 
-        setTimeout(function () {
+          //setVolatility Score of Coin
+          let volatilityScore;
 
-          // Get Average Price
-          let sum = prices.reduce((a, b) => a + b, 0);
+          if (trade.median_price > trade.last_price) {
+            volatilityScore = trade.median_price - trade.last_price; // / trade.count;
+            // volatilityScore = volatilityScore * trade.price / trade.count;
+          } else {
+            volatilityScore = trade.last_price - trade.median_price / trade.count;
+            //volatilityScore = volatilityScore * trade.price / trade.count;
+          }
 
-          console.log(sum);
-          avgPrice = sum / prices.length;
-          // Sort Buys by Price Desc
-          buys.sort(function (a, b) {
-            return a.price - b.price;
+          //Send Coin Details to swapsList
+          swaps.push({
+            symbol: `${trade.buyCurrency.symbol}`,
+            address: `${trade.buyCurrency.address.toString()}`,
+            tradeCount: `${trade.count}`,
+            volatilityScore: volatilityScore.toFixed(5),
           });
-          buys.reverse();
-          createBuys(buys);
-          buys.reverse();
-          createSells(buys);
-          buys = [];
-          prices = [];
-        }, 1000);
 
-      };
+        });
 
-      async function buyClick(el, _buyExchange, _buyPrice) {
+        // Sort SwapsList by volatilityScore
+        swaps.sort(function (a, b) {
+          return a.volatilityScore - b.volatilityScore;
+        });
+        swaps.reverse();
 
-      buyPrice = _buyPrice;
+        //Build Swap Cards
+        swaps.forEach(swap => {
 
-      $('.selected_cards .buy_card').replaceWith(el);
-        buyExchange = _buyExchange;
-      };
+          imageUrl = "#";
 
-      async function sellClick(el, _sellExchange, _sellPrice) {
-        sellPrice = _sellPrice;
-        console.log(_sellExchange);
-        $('.selected_cards .sell_card').replaceWith(el);
-        sellExchange = _sellExchange;
-      };
+          getImage(swap.symbol);
+
+          let htmlSegment = `<div class="swap_card" onClick="swapClick(this,'${swap.address}')">
+                        <div class="token_img">
+                          <img src='${imageUrl}' alt='logo for ${swap.symbol}' />
+                        </div>
+                        <div class='details_left'>
+                          <div class='symbol'>
+                            ${swap.symbol}
+                          </div>
+                          <div class='label'>
+                            T${swap.tradeCount}
+                          </div>
+                        </div>
+                        <div class='details_right'>
+                          <div class='score'>
+                            ${swap.volatilityScore}
+                          </div>
+                          <div class='label'>
+                            VOLATILITY
+                          </div>
+                        </div>
+                      </div>`;
+
+          html += htmlSegment;
+          $('.swaps').empty();
+          $('.swaps').prepend(html);
+        });
+      }
 
       async function createSells(_buys, _totalBuys) {
 
@@ -343,7 +413,7 @@
             html = '';
             let htmlSegment = `<div class="sell_card" onClick="sellClick(this, '${_buys[i].exchangeAddress}', ${_buys[i].price})">
                                 <div class="token_img">
-                                  <img src='$logo' alt='' />
+                                  <img src='../img/${_buys[i].symbol}.png' alt='logo for ${_buys[i].symbol}.png' />
                                 </div>
                                 <div class='details_left'>
                                   <div class='symbol'>
@@ -380,7 +450,7 @@
             html = '';
             let htmlSegment = `<div class="buy_card" onClick="buyClick(this, '${_buys[i].exchangeAddress}', ${_buys[i].price})">
                                 <div class="token_img">
-                                  <img src='$logo' alt='' />
+                                  <img src='../img/${_buys[i].symbol}.png' alt='logo for ${_buys[i].symbol}' />
                                 </div>
                                 <div class='details_left'>
                                   <div class='symbol'>
@@ -487,78 +557,24 @@
           }
         }
 
-      async function createSwapCards() {
+      async function getImage(_symbol) {
 
-        let html = '';
+        if (typeof (savedImages[_symbol]) != "undefined") {
+          imageUrl = savedImages[_symbol];
+        } else {
+          let getCoinAPIImage = await $.getJSON(`https://min-api.cryptocompare.com/data/all/coinlist?summary=true&fsym=${_symbol}&api_key=93b95d279c8922ca2c0186a61426b341ec206777e39dc3481d475d407d718892`).done(function (data) { return data });
+          let coinAPIImageData = getCoinAPIImage.Data;
+          if (typeof (coinAPIImageData) != "undefined") {
+            let coinAPIImage = coinAPIImageData[_symbol].ImageUrl;
+            if (typeof (coinAPIImage) != "undefined") {
+              let coinAPIImageUrl = `https://www.cryptocompare.com${coinAPIImage}`;
+              savedImages[_symbol] = coinAPIImageUrl;
+              imageUrl =  coinAPIImageUrl;
+            } else { return "#" }
+          } else { return "#" }
+        }
+      };
 
-        //Get the data from the call 
-        let tradeData = await getTrades();
-
-        let trades = tradeData.data.ethereum.dexTrades;
-
-        //Create a List of Swaps
-        let swaps = [];
-
-        trades.forEach(trade => {
-
-          //setVolatility Score of Coin
-          let volatilityScore;
-
-          if (trade.median_price > trade.last_price) {
-            volatilityScore = trade.median_price - trade.last_price; // / trade.count;
-            // volatilityScore = volatilityScore * trade.price / trade.count;
-          } else {
-            volatilityScore = trade.last_price - trade.median_price / trade.count;
-            //volatilityScore = volatilityScore * trade.price / trade.count;
-          }
-
-          //Send Coin Details to swapsList
-          swaps.push({
-            symbol: `${trade.buyCurrency.symbol}`,
-            address: `${trade.buyCurrency.address.toString()}`,
-            tradeCount: `${trade.count}`,
-            volatilityScore: volatilityScore.toFixed(5),
-          });
-
-        });
-
-        // Sort SwapsList by volatilityScore
-        swaps.sort(function (a, b) {
-          return a.volatilityScore - b.volatilityScore;
-        });
-        swaps.reverse();
-
-        //Build Swap Cards
-        swaps.forEach(swap => {
-          let htmlSegment = `<div class="swap_card" onClick="swapClick(this,'${swap.address}')">
-                        <div class="token_img">
-                          <img src='$logo' alt='' />
-                        </div>
-                        <div class='details_left'>
-                          <div class='symbol'>
-                            ${swap.symbol}
-                          </div>
-                          <div class='label'>
-                            T${swap.tradeCount}
-                          </div>
-                        </div>
-                        <div class='details_right'>
-                          <div class='score'>
-                            ${swap.volatilityScore}
-                          </div>
-                          <div class='label'>
-                            VOLATILITY
-                          </div>
-                        </div>
-                      </div>`;
-
-          html += htmlSegment;
-          $('.swaps').empty();
-          $('.swaps').prepend(html);
-        });
-      }
-
-      
       $(document).ready(function () {
           $(".test_button").click(function () {
             testClick();
