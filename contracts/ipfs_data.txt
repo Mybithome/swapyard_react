@@ -1,0 +1,27 @@
+Metadata and sources of "arbitrage" were published successfully.
+contracts/Babylonian.sol : 
+dweb:/ipfs/QmPc8fXTDcoGYSJzZbX9U5UN98qtpmTkYXzumFJ4zSb5VG
+contracts/FullMath.sol : 
+dweb:/ipfs/QmWWVmJVNZmWoUmeGB9Y36UQZiQSiHLskaKYqqgJEXxuwY
+contracts/IUniswapV2Factory.sol : 
+dweb:/ipfs/QmZDkw4VRQ7eT2qWEKbxtQWiSuS7WFzFdEuF6NAn4vbtKM
+contracts/IERC20.sol : 
+dweb:/ipfs/QmfGS2RRKUo7ZfDc8Q91edh4uPndygJWmawvVjkhmdVkFb
+contracts/Arbitrage.sol : 
+dweb:/ipfs/QmaYnfqbL5Uv2inSHh2hr9XRnpj8SSdECAAkg1h1vr53PV
+contracts/IUniswapV2Pair.sol : 
+dweb:/ipfs/QmeTtxeww32MMVtjAHTJXGZ1ZrpQZN7ebC4Z8HwqsCESAJ
+contracts/IUniswapV2Router01.sol : 
+dweb:/ipfs/QmR9ecakrBeKj7AHKkhmSu4LyMbbXxKbTgKdmck9ucbqtH
+contracts/SafeMath.sol : 
+dweb:/ipfs/QmYqDWsPzvurmH8MfJkbuXe1bSX5GEyYCecAuSMcomoJHv
+contracts/IUniswapV2Router02.sol : 
+dweb:/ipfs/QmXxKVQcn8S3BHTo8NNV9nayicY5CVvCR2E4PnYgA8Vx4v
+contracts/UniswapV2Library.sol : 
+dweb:/ipfs/QmaqMFeqdVpHRQveNsvXpF4Jg8VZGJyaaRidDubEdVHi2w
+contracts/TransferHelper.sol : 
+dweb:/ipfs/QmPw1xGnge51nZnv8YM9bQMVrsxSd8GidhFgmJi171z46g
+contracts/UniswapV2LiquidityMathLibrary.sol : 
+dweb:/ipfs/QmQCxuLs8eaco64zv5BpS3PmvoGs1nQbLfWJyMp5dhs3AA
+metadata.json : 
+dweb:/ipfs/QmeyXB2yvbwHauAAh9AmyW6tJJRPonKDHq6V8sEfYerF41

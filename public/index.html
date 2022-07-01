@@ -54,18 +54,32 @@
       
       //var fs = require('fs');
 
-      const currentProvider = new Web3("http://polygon-mainnet.g.alchemy.com/v2/SDyABc9UKoBu7Pwz5vlugJXk7ewTCJRP"); //http://polygon-mainnet.g.alchemy.com/v2/SDyABc9UKoBu7Pwz5vlugJXk7ewTCJRP
+      //const currentProvider = new Web3("wss://polygon-mainnet.g.alchemy.com/v2/cMMCF1Npr-hhwaR0MLE39RSAbY11j7xm"); //http://polygon-mainnet.g.alchemy.com/v2/SDyABc9UKoBu7Pwz5vlugJXk7ewTCJRP
 
-      const web3 = new Web3(currentProvider);
+      // const web3 = new Web3("https://rpc-mainnet.maticvigil.com");
+      const web3 = new Web3(window.ethereum);
 
+      
+      const getERC20ABI = $.getJSON('../contracts/IERC20.json');
       const getRouterABI =  $.getJSON('../contracts/IUniswapV2Router02.json');
       const getFactoryABI =  $.getJSON("../contracts/IUniswapV2Factory.json");
       const getExchangeRouters = $.getJSON("../exchangeDetails.json");
       const getArbitrageABI = $.getJSON("../contracts/Arbitrage.json");
       const getPairABI = $.getJSON("../contracts/IUniswapV2Pair.json");
+      const getDODOFactoryABI = $.getJSON('../contracts/DODOFactory.json');
+      const getDODOPoolABI = $.getJSON('../contracts/IDODO.json');
       
       const getSavedImages = $.getJSON('../coinImages.json');
 
+      let userAddress;
+      let DODOPoolABI;
+      let DODOPoolContract;
+      let flashLoanPool;
+      let flashLoanPools;
+      let flashLoanFactory;
+      let DODOFactoryABI;
+      let loanTokenABI;
+      let loanTokenContract;
       let ArbitrageABI; 
       let arbitrageContract; 
       let IUniswapV2Factory; 
@@ -92,19 +106,33 @@
       let trueSellPriceTokenB;
       let maxBuySpend;
       let maxSellSpend;
+      let maxSwap;
       let path = [];
       let buyAmountsOut;
       let sellAmountsOut;
+      let estimatedGas;
       let savedImages;
       let imageUrl; 
+
 
       maxBuySpend = 10000;
 
       
 
       async function testClick() {
+
+        getFlashLoanPool();
+
+        if (typeof window.ethereum !== 'undefined') {
+          console.log('MetaMask is installed!');
+        }
+
         ArbitrageABI = await getArbitrageABI.responseJSON;
-        arbitrageContract = await new web3.eth.Contract(ArbitrageABI.abi, "0x0D05bAea979891e8dCD257495F08f7825a11aae9");
+        arbitrageContract = await new web3.eth.Contract(ArbitrageABI.abi, "0x41d641885b2721106B72D4c3033cC3a19b382EBb");
+
+        loanTokenABI = await getERC20ABI.responseJSON;
+        loanTokenContract = new web3.eth.Contract(loanTokenABI.abi, loanTokenAddress);
+
         exchangeRouters = await getExchangeRouters.responseJSON;
         IUniswapV2Pair = await getPairABI.responseJSON;
         IUniswapV2Router = await getRouterABI.responseJSON;
@@ -208,7 +236,21 @@
           trueSellPriceTokenA = 100000;
           trueSellPriceTokenB = sellPrice * 100000;
         }
-        
+
+        // Try New Function to Determine Exact Borrow Amount
+        // try {
+        //   maxBuy = await arbitrageContract.methods.getMaxSwap(loanTokenAddress, selectedTokenAddress, web3.utils.BN(1), web3.utils.BN(buyPrice), web3.utils.BN(10000), 0, buyExchange).call();
+        //   maxSell = await arbitrageContract.methods.getMaxSwap(loanTokenAddress, selectedTokenAddress, web3.utils.BN(1), web3.utils.BN(buyPrice), web3.utils.BN(10000), 0, buyExchange).call();
+        //   if ( maxBuy >= maxSell ) {
+        //     maxBuySpend = maxBuy; 
+        //   } else {
+        //     maxBuySpend = maxSell;
+        //   }
+        //   console.log(`Max Swap Returned : ${maxBuySpend}`)
+        // } catch (error) {
+        //   console.error(error)
+        //   console.log(`Max Swap Failed`)
+        // };
         
         //Get OptimumSwapAmount
         
@@ -225,7 +267,10 @@
         sellAmountsOut = await sellRouter.methods.getAmountsOut( web3.utils.BN(buyAmountsOut[1]), path ).call();
 
         let testProfit = sellAmountsOut[1] - buyAmountsOut[0] ;
-
+        
+        
+        
+        
         // Display Results
         setTimeout(function () {
           $('.reserves_delta .label_right').html(difference);
@@ -235,11 +280,22 @@
           $('.sell_return .label_right').html(sellAmountsOut[1]);
 
           $('.estimated_return .label_right').html(testProfit);
-         }, 1000);
+         }, 100);
+
+        loanTokenABI = await getERC20ABI.responseJSON;
+        loanTokenContract = await new web3.eth.Contract(loanTokenABI.abi, loanTokenAddress);
+        estimatedGas = await loanTokenContract.methods.approve("0x41d641885b2721106B72D4c3033cC3a19b382EBb", maxBuySpend).estimateGas({ from: `${userAddress}` });
+        await loanTokenContract.methods.approve("0x41d641885b2721106B72D4c3033cC3a19b382EBb", maxBuySpend).send({ from: `${userAddress}`, gasPrice: `${web3.utils.toWei(estimatedGas.toString())}`, maxFeePerGas: web3.utils.toWei('40', 'Gwei').toString(), maxPriorityFeePerGas: web3.utils.toWei('30', 'Gwei').toString() });
+        
       };
 
       async function sendClick() {
-
+        ArbitrageABI = await getArbitrageABI.responseJSON;
+        arbitrageContract = await new web3.eth.Contract(ArbitrageABI.abi, "0x3825b1dA21a35d16a0aD08Fc2Eb0BB5852a43cAD");
+        console.log(`estimating gas...`);
+        estimatedGas = await arbitrageContract.methods.executeTrade(flashLoanPool, loanTokenAddress, selectedTokenAddress, web3.utils.BN(maxBuySpend), exchangeRouters[buyExchange], exchangeRouters[sellExchange], userAddress).estimateGas({ from: `${userAddress}`});
+        console.log(`estimated Gas Arbitrage: ${estimatedGas}`);
+        await arbitrageContract.methods.executeTrade(flashLoanPool, loanTokenAddress, selectedTokenAddress, web3.utils.BN(maxBuySpend), exchangeRouters[buyExchange], exchangeRouters[sellExchange], userAddress).send({ from: `${userAddress}`, gasPrice: `${web3.utils.toWei(estimatedGas.toString())}`, maxFeePerGas: web3.utils.toWei('40', 'Gwei').toString(), maxPriorityFeePerGas: web3.utils.toWei('30', 'Gwei').toString() })
       };
 
       async function buyClick(el, _buyExchange, _buyPrice) {
@@ -475,6 +531,32 @@
         
       };
 
+      //Here we are going to make sure that there is a pool with the tokens that we are using within the flashloan provider's pool factory.
+      async function getFlashLoanPool() {
+
+        DODOFactoryABI = await getDODOFactoryABI.responseJSON;
+        DODOPoolABI = await getDODOPoolABI.responseJSON;
+
+        flashLoanFactory = await new web3.eth.Contract(DODOFactoryABI, "0x79887f65f83bdf15Bcc8736b5e5BcDB48fb8fE13");
+        //Here we will call to the flashloan contract using the methods keyword which will envoke the getDODOPool function that 
+        //requires the stable token address and the volatile token address.
+        //Then we will send the call using the call() function.
+        flashLoanPools = await flashLoanFactory.methods.getDODOPool(loanTokenAddress, "0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063").call() //set to borrow from USDC and DAI pair.
+
+        for (i = 0; i < flashLoanPools.length; i++) {
+          checkPool(flashLoanPools[i]);
+        };
+        
+      }
+
+      async function checkPool(_poolAddress) {
+        DODOPoolContract = await new web3.eth.Contract(DODOPoolABI, _poolAddress);
+        let loanReserves = await DODOPoolContract.methods._BASE_RESERVE_().call();
+        if (loanReserves > 10000) {
+          flashLoanPool = _poolAddress;
+        }
+      }
+
       async function getPrice(_exchangeAddress, _tokenAddress) {
 
           //Get Exchanges With Currency
@@ -563,7 +645,7 @@
           imageUrl = savedImages[_symbol];
         } else {
           let getCoinAPIImage = await $.getJSON(`https://min-api.cryptocompare.com/data/all/coinlist?summary=true&fsym=${_symbol}&api_key=93b95d279c8922ca2c0186a61426b341ec206777e39dc3481d475d407d718892`).done(function (data) { return data });
-          let coinAPIImageData = getCoinAPIImage.Data;
+          let coinAPIImageData = await getCoinAPIImage.Data;
           if (typeof (coinAPIImageData) != "undefined") {
             let coinAPIImage = coinAPIImageData[_symbol].ImageUrl;
             if (typeof (coinAPIImage) != "undefined") {
@@ -575,10 +657,27 @@
         }
       };
 
+      async function getUserAddress() {
+        //Will Start the metamask extension
+        let accounts = await ethereum.request({ method: 'eth_requestAccounts' });
+        userAddress = accounts[0];
+        $('.enableEthereumButton').html(userAddress);
+      }
+
       $(document).ready(function () {
-          $(".test_button").click(function () {
-            testClick();
-          });
+        
+        $(".confirmation_button").click(function () {
+          sendClick();
+        });
+
+        $(".test_button").click(function () {
+          testClick();
+        });
+
+        $(".enableEthereumButton").click( () => {
+          getUserAddress();
+        });
+        
       });
       createSwapCards();
     </script>
