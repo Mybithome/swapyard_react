@@ -25,13 +25,28 @@
       Learn how to configure a non-root public URL by running `npm run build`.
     -->
     <title>React App</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/big.js/2.3.0/big.min.js"
-      integrity="sha512-FRFtxO3b4HKkMcWJ/Yv7tQp+WwWMSPLDlAO5hn1TbNgswaE+RAFESuBbulWR/PNeTq9d4DS/hyEZbcZRAqlYwQ=="
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"
+      integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ=="
       crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+      
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-mobile/1.4.1/jquery.mobile.min.js"
+      integrity="sha512-wSacGPS/KRyVB67O4xD+Eh1OX4/dq4juZj9DKTokRt81BzLbfsSMtNgR9Pu8FLr4kLbk5oNr9Hq+5PeWLCX8mA=="
+      crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/notify/0.4.2/notify.min.js"
+      integrity="sha512-efUTj3HdSPwWJ9gjfGR71X9cvsrthIA78/Fvd/IN+fttQVy7XWkOAXb295j8B3cmm/kFKVxjiNYzKw9IQJHIuQ=="
+      crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/web3/1.7.4/web3.min.js"
       integrity="sha512-oMd9Re3VgJcXuZJn9DN6X7S7JUc7xLYZ2UyZ85Mm/xzaW3lwBr4fV2zjuu/n5jY/Of/2JOx35CTa6zvQNxb31Q=="
       crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/big.js/2.3.0/big.min.js"
+      integrity="sha512-FRFtxO3b4HKkMcWJ/Yv7tQp+WwWMSPLDlAO5hn1TbNgswaE+RAFESuBbulWR/PNeTq9d4DS/hyEZbcZRAqlYwQ=="
+      crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+
     <script>
 
       let prices = [];
@@ -71,6 +86,7 @@
       
       const getSavedImages = $.getJSON('../coinImages.json');
 
+      let isProfitable;
       let userAddress;
       let DODOPoolABI;
       let DODOPoolContract;
@@ -113,6 +129,7 @@
       let estimatedGas;
       let savedImages;
       let imageUrl; 
+      let contractApproval;
 
 
       maxBuySpend = 10000;
@@ -125,14 +142,24 @@
 
         if (typeof window.ethereum !== 'undefined') {
           console.log('MetaMask is installed!');
+        } 
+
+        if (typeof (userAddress) === 'undefined') {
+          $('.enableEthereumButton').notify("You Must Connect First", "error", {postion: "bottom"});
+          return;
+        }
+
+        if (window.ethereum.chainId !== '0x89') {
+          $('.enableEthereumButton').notify("You Must Connect to POLYGON MAINNET", "error", { postion: "bottom" });
+          return;
         }
 
         ArbitrageABI = await getArbitrageABI.responseJSON;
-        arbitrageContract = await new web3.eth.Contract(ArbitrageABI.abi, "0x41d641885b2721106B72D4c3033cC3a19b382EBb");
+        arbitrageContract = await new web3.eth.Contract(ArbitrageABI.abi, "0x3825b1da21a35d16a0ad08fc2eb0bb5852a43cad");
 
         loanTokenABI = await getERC20ABI.responseJSON;
         loanTokenContract = new web3.eth.Contract(loanTokenABI.abi, loanTokenAddress);
-
+        
         exchangeRouters = await getExchangeRouters.responseJSON;
         IUniswapV2Pair = await getPairABI.responseJSON;
         IUniswapV2Router = await getRouterABI.responseJSON;
@@ -146,13 +173,13 @@
         sellRouter = await new web3.eth.Contract(IUniswapV2Router.abi, exchangeRouters[sellExchange]);
         sellRouter.setProvider(web3.currentProvider);
         //get pair contract
-        buyPairAddress = await buyFactory.methods.getPair(loanTokenAddress, selectedTokenAddress).call();
-        sellPairAddress = await sellFactory.methods.getPair(loanTokenAddress, selectedTokenAddress).call();
+        buyPairAddress = await buyFactory.methods.getPair(loanTokenAddress, selectedTokenAddress).call({ gas: "100000" });
+        sellPairAddress = await sellFactory.methods.getPair(loanTokenAddress, selectedTokenAddress).call({ gas: "100000" });
         buyPairContract = await new web3.eth.Contract(IUniswapV2Pair.abi, buyPairAddress);
         sellPairContract = await new web3.eth.Contract(IUniswapV2Pair.abi, sellPairAddress);
         //Get reserves
-        buyReserves = await buyPairContract.methods.getReserves().call();
-        sellReserves = await sellPairContract.methods.getReserves().call();
+        buyReserves = await buyPairContract.methods.getReserves().call({ gas: "100000" });
+        sellReserves = await sellPairContract.methods.getReserves().call({ gas: "100000" });
         calcBuyPrice = Big(buyReserves[0]).div(Big(buyReserves[1])).toString();
         calcSellPrice = Big(sellReserves[0]).div(Big(sellReserves[1])).toString();
         difference = (((calcBuyPrice - calcSellPrice) / calcSellPrice) * 100).toFixed(2);
@@ -258,19 +285,36 @@
         path[1] = selectedTokenAddress;
 
         // Returns the maximum amount of selected tokens returned for the maxBuySpend.
-        buyAmountsOut = await buyRouter.methods.getAmountsOut( web3.utils.BN(maxBuySpend), path ).call();
+        buyAmountsOut = await buyRouter.methods.getAmountsOut( web3.utils.BN(maxBuySpend), path ).call({ gas: "100000" });
 
         path[0] = selectedTokenAddress;
         path[1] = loanTokenAddress;
 
         // Returns the maximum amount of loanTokens returned for the amount of selected Tokens returned by buyAmountsOut.
-        sellAmountsOut = await sellRouter.methods.getAmountsOut( web3.utils.BN(buyAmountsOut[1]), path ).call();
+        sellAmountsOut = await sellRouter.methods.getAmountsOut( web3.utils.BN(buyAmountsOut[1]), path ).call({ gas: "100000" });
 
         let testProfit = sellAmountsOut[1] - buyAmountsOut[0] ;
         
-        
-        
-        
+        if (testProfit > 0){
+          isProfitable = true;
+        } else {
+          isProfitable = false;
+        }
+
+        if (isProfitable) {
+          try {
+            estimatedGas = await web3.eth.getGasPrice()
+            contractApproval = await loanTokenContract.methods.approve("0x3825b1dA21a35d16a0aD08Fc2Eb0BB5852a43cAD", web3.utils.toWei(maxBuySpend.toString(), 'ether').toString()).send({ from: `${userAddress}`, gasPrice: `${estimatedGas}`, maxFeePerGas: web3.utils.toWei('40', 'Gwei').toString(), maxPriorityFeePerGas: web3.utils.toWei('30', 'Gwei').toString() });
+          } catch(error) {
+            let errorMessage = JSON.parse(error.message.split("Internal JSON-RPC error.\n").pop()).message;
+            if (errorMessage === 'execution reverted: SafeERC20: low-level call failed' ) {
+              $.notify("Test Transaction Came Back Unprofitable, Try Agian.")
+            } else {
+              $('.test_button').notify(errorMessage, "error")
+            }
+          }
+        }
+
         // Display Results
         setTimeout(function () {
           $('.reserves_delta .label_right').html(difference);
@@ -282,20 +326,12 @@
           $('.estimated_return .label_right').html(testProfit);
          }, 100);
 
-        loanTokenABI = await getERC20ABI.responseJSON;
-        loanTokenContract = await new web3.eth.Contract(loanTokenABI.abi, loanTokenAddress);
-        estimatedGas = await loanTokenContract.methods.approve("0x41d641885b2721106B72D4c3033cC3a19b382EBb", maxBuySpend).estimateGas({ from: `${userAddress}` });
-        await loanTokenContract.methods.approve("0x41d641885b2721106B72D4c3033cC3a19b382EBb", maxBuySpend).send({ from: `${userAddress}`, gasPrice: `${web3.utils.toWei(estimatedGas.toString())}`, maxFeePerGas: web3.utils.toWei('40', 'Gwei').toString(), maxPriorityFeePerGas: web3.utils.toWei('30', 'Gwei').toString() });
-        
+         
       };
 
       async function sendClick() {
-        ArbitrageABI = await getArbitrageABI.responseJSON;
-        arbitrageContract = await new web3.eth.Contract(ArbitrageABI.abi, "0x3825b1dA21a35d16a0aD08Fc2Eb0BB5852a43cAD");
-        console.log(`estimating gas...`);
-        estimatedGas = await arbitrageContract.methods.executeTrade(flashLoanPool, loanTokenAddress, selectedTokenAddress, web3.utils.BN(maxBuySpend), exchangeRouters[buyExchange], exchangeRouters[sellExchange], userAddress).estimateGas({ from: `${userAddress}`});
-        console.log(`estimated Gas Arbitrage: ${estimatedGas}`);
-        await arbitrageContract.methods.executeTrade(flashLoanPool, loanTokenAddress, selectedTokenAddress, web3.utils.BN(maxBuySpend), exchangeRouters[buyExchange], exchangeRouters[sellExchange], userAddress).send({ from: `${userAddress}`, gasPrice: `${web3.utils.toWei(estimatedGas.toString())}`, maxFeePerGas: web3.utils.toWei('40', 'Gwei').toString(), maxPriorityFeePerGas: web3.utils.toWei('30', 'Gwei').toString() })
+        estimatedGas = 
+        await arbitrageContract.methods.executeTrade(flashLoanPool, loanTokenAddress, selectedTokenAddress,  web3.utils.toWei(maxBuySpend.toString(), 'ether').toString(), exchangeRouters[buyExchange], exchangeRouters[sellExchange], userAddress).send({ from: `${userAddress}`, gasPrice: web3.utils.toWei(estimatedGas), maxFeePerGas: web3.utils.toWei('100', 'Gwei').toString(), maxPriorityFeePerGas: web3.utils.toWei('95', 'Gwei').toString() })
       };
 
       async function buyClick(el, _buyExchange, _buyPrice) {
@@ -531,7 +567,6 @@
         
       };
 
-      //Here we are going to make sure that there is a pool with the tokens that we are using within the flashloan provider's pool factory.
       async function getFlashLoanPool() {
 
         DODOFactoryABI = await getDODOFactoryABI.responseJSON;
@@ -541,17 +576,17 @@
         //Here we will call to the flashloan contract using the methods keyword which will envoke the getDODOPool function that 
         //requires the stable token address and the volatile token address.
         //Then we will send the call using the call() function.
-        flashLoanPools = await flashLoanFactory.methods.getDODOPool(loanTokenAddress, "0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063").call() //set to borrow from USDC and DAI pair.
+        flashLoanPools = await flashLoanFactory.methods.getDODOPool(loanTokenAddress, "0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063").call({ gas : "100000"}) //set to borrow from USDC and DAI pair.
 
         for (i = 0; i < flashLoanPools.length; i++) {
-          checkPool(flashLoanPools[i]);
+          await checkPool(flashLoanPools[i]);
         };
         
       }
 
       async function checkPool(_poolAddress) {
         DODOPoolContract = await new web3.eth.Contract(DODOPoolABI, _poolAddress);
-        let loanReserves = await DODOPoolContract.methods._BASE_RESERVE_().call();
+        let loanReserves = await DODOPoolContract.methods._BASE_RESERVE_().call({ gas: "100000" });
         if (loanReserves > 10000) {
           flashLoanPool = _poolAddress;
         }
