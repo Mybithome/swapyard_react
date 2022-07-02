@@ -30,8 +30,8 @@
       integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ=="
       crossorigin="anonymous" referrerpolicy="no-referrer"></script>
       
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-mobile/1.4.1/jquery.mobile.min.js"
-      integrity="sha512-wSacGPS/KRyVB67O4xD+Eh1OX4/dq4juZj9DKTokRt81BzLbfsSMtNgR9Pu8FLr4kLbk5oNr9Hq+5PeWLCX8mA=="
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"
+      integrity="sha512-uto9mlQzrs59VwILcLiRYeLKPPbS/bT71da/OEBYEwcdNUk8jYIy+D176RYoop1Da+f9mvkYrmj5MCLZWEtQuA=="
       crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/notify/0.4.2/notify.min.js"
@@ -46,7 +46,7 @@
       integrity="sha512-FRFtxO3b4HKkMcWJ/Yv7tQp+WwWMSPLDlAO5hn1TbNgswaE+RAFESuBbulWR/PNeTq9d4DS/hyEZbcZRAqlYwQ=="
       crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
-
+    
     <script>
 
       let prices = [];
@@ -86,6 +86,8 @@
       
       const getSavedImages = $.getJSON('../coinImages.json');
 
+      let buyExchangeName;
+      let sellExchangeName;
       let isProfitable;
       let userAddress;
       let DODOPoolABI;
@@ -132,11 +134,13 @@
       let contractApproval;
 
 
-      maxBuySpend = 10000;
+      
 
       
 
       async function testClick() {
+
+        maxBuySpend = $('.borrow_amount input').val();
 
         getFlashLoanPool();
 
@@ -165,13 +169,9 @@
         IUniswapV2Router = await getRouterABI.responseJSON;
         IUniswapV2Factory = await getFactoryABI.responseJSON;
         buyFactory = await new web3.eth.Contract(IUniswapV2Factory.abi, buyExchange);
-        buyFactory.setProvider(web3.currentProvider);
-        buyRouter = await new web3.eth.Contract(IUniswapV2Router.abi, exchangeRouters[buyExchange]);
-        buyRouter.setProvider(web3.currentProvider);
+        buyRouter = await new web3.eth.Contract(IUniswapV2Router.abi, exchangeRouters[buyExchangeName].router);
         sellFactory = await new web3.eth.Contract(IUniswapV2Factory.abi, sellExchange); 
-        sellFactory.setProvider(web3.currentProvider);
-        sellRouter = await new web3.eth.Contract(IUniswapV2Router.abi, exchangeRouters[sellExchange]);
-        sellRouter.setProvider(web3.currentProvider);
+        sellRouter = await new web3.eth.Contract(IUniswapV2Router.abi, exchangeRouters[sellExchangeName].router);
         //get pair contract
         buyPairAddress = await buyFactory.methods.getPair(loanTokenAddress, selectedTokenAddress).call({ gas: "100000" });
         sellPairAddress = await sellFactory.methods.getPair(loanTokenAddress, selectedTokenAddress).call({ gas: "100000" });
@@ -331,20 +331,22 @@
 
       async function sendClick() {
         estimatedGas = 
-        await arbitrageContract.methods.executeTrade(flashLoanPool, loanTokenAddress, selectedTokenAddress,  web3.utils.toWei(maxBuySpend.toString(), 'ether').toString(), exchangeRouters[buyExchange], exchangeRouters[sellExchange], userAddress).send({ from: `${userAddress}`, gasPrice: web3.utils.toWei(estimatedGas), maxFeePerGas: web3.utils.toWei('100', 'Gwei').toString(), maxPriorityFeePerGas: web3.utils.toWei('95', 'Gwei').toString() })
+        await arbitrageContract.methods.executeTrade(flashLoanPool, loanTokenAddress, selectedTokenAddress,  web3.utils.toWei(maxBuySpend.toString(), 'ether').toString(), exchangeRouters[buyExchangeName].Router, exchangeRouters[sellExchange], userAddress).send({ from: `${userAddress}`, gasPrice: web3.utils.toWei(estimatedGas), maxFeePerGas: web3.utils.toWei('100', 'Gwei').toString(), maxPriorityFeePerGas: web3.utils.toWei('95', 'Gwei').toString() })
       };
 
       async function buyClick(el, _buyExchange, _buyPrice) {
 
-      buyPrice = _buyPrice;
-
-      $('.selected_cards .buy_card').replaceWith(el);
+         buyPrice = _buyPrice;
+        $('.buys_column').hide();
+        $('.sells_column').show();
+        $('.selected_cards .buy_card').replaceWith(el);
         buyExchange = _buyExchange;
       };
 
       async function sellClick(el, _sellExchange, _sellPrice) {
     sellPrice = _sellPrice;
-    console.log(_sellExchange);
+    $('.sells_column').hide();
+    $('.trade_column').show();
     $('.selected_cards .sell_card').replaceWith(el);
     sellExchange = _sellExchange;
   };
@@ -352,7 +354,8 @@
       async function swapClick(el, tokenAddress) {
 
     selectedTokenAddress = tokenAddress;
-
+    $('.swaps_column').hide();
+    $('.buys_column').show();
     $('.selected_cards .swap_card').replaceWith(el);
 
     //Get Exchange Data
@@ -461,13 +464,13 @@
         //Build Swap Cards
         swaps.forEach(swap => {
 
-          imageUrl = "#";
+          imageUrl = "../img/unknown.png";
 
           getImage(swap.symbol);
 
           let htmlSegment = `<div class="swap_card" onClick="swapClick(this,'${swap.address}')">
                         <div class="token_img">
-                          <img src='${imageUrl}' alt='logo for ${swap.symbol}' />
+                          <img src='${imageUrl}' alt='' />
                         </div>
                         <div class='details_left'>
                           <div class='symbol'>
@@ -499,13 +502,15 @@
 
           for (i = 0; i < _buys.length; i++) {
 
+            getImage(_buys[i].symbol);
+
             let priceDelta = _buys[i].price - avgPrice;
 
             priceDelta = Number(priceDelta).toFixed(6);
             html = '';
             let htmlSegment = `<div class="sell_card" onClick="sellClick(this, '${_buys[i].exchangeAddress}', ${_buys[i].price})">
                                 <div class="token_img">
-                                  <img src='../img/${_buys[i].symbol}.png' alt='logo for ${_buys[i].symbol}.png' />
+                                  <img src='${imageUrl}' alt='' />
                                 </div>
                                 <div class='details_left'>
                                   <div class='symbol'>
@@ -536,13 +541,15 @@
 
           for (i = 0; i < _buys.length; i++) {
 
+            getImage(_buys[i].symbol);
+
             let priceDelta = _buys[i].price - avgPrice;
 
             priceDelta = Number(priceDelta).toFixed(6);
             html = '';
             let htmlSegment = `<div class="buy_card" onClick="buyClick(this, '${_buys[i].exchangeAddress}', ${_buys[i].price})">
                                 <div class="token_img">
-                                  <img src='../img/${_buys[i].symbol}.png' alt='logo for ${_buys[i].symbol}' />
+                                  <img src='${imageUrl}' alt='' />
                                 </div>
                                 <div class='details_left'>
                                   <div class='symbol'>
@@ -687,8 +694,8 @@
               let coinAPIImageUrl = `https://www.cryptocompare.com${coinAPIImage}`;
               savedImages[_symbol] = coinAPIImageUrl;
               imageUrl =  coinAPIImageUrl;
-            } else { return "#" }
-          } else { return "#" }
+            } else { return "../img/unknown.png" }
+          } else { return "../img/unknown.png" }
         }
       };
 
@@ -712,10 +719,30 @@
         $(".enableEthereumButton").click( () => {
           getUserAddress();
         });
+
+        $(".buys_column").hide();
+        $(".sells_column").hide()
+        $(".trade_column").hide()
+
+        // html = '';
+        // let htmlSegment = `<label for="slider-1" class="form-label">Example range</label>
+        //                   <input type="range" name="slider-1" id="slider-1" min="0" step="1000" max="10000" ></input>`
+        // html += htmlSegment;
+        // $('.buy_amount').prepend(html);
+
+       $('#slider-1').slider();
+       $('#slider-1').change(function() {
+        $('.borrow_amount').html('$'+$('#slider-1').val());
+       });
+       $('#slider-1').val(10000);
         
       });
       createSwapCards();
     </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Finlandica:ital,wght@1,400;1,500;1,600;1,700&display=swap"
+      rel="stylesheet">
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>

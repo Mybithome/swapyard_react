@@ -1,9 +1,22 @@
 {
-    "0x5757371414417b8c6caad45baef941abc7d3ab32" : "0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff",
-    "0xc35dadb65012ec5796536bd9864ed8773abc74c4" : "0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506",
-    "0xcf083be4164828f00cae704ec15a36d711491284" : "0xC0788A3aD43d79aa53B09c2EaCc313A787d1d607",
-    "0x5bdd1cd910e3307582f213b33699e676e61dead9" : "0xBd13225f0a45BEad8510267B4D6a7c78146Be459",
-    "0x668ad0ed2622c62e24f0d5ab6b6ac1b9d2cd4ac7" : "0x5C6EC38fb0e2609672BDf628B1fD605A523E5923"
-
-
+    "QuickSwap" : {
+        "factory":"0x5757371414417b8c6caad45baef941abc7d3ab32",
+        "router":"0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff"
+    },
+    "SushiSwap" : {
+        "factory":"0xc35dadb65012ec5796536bd9864ed8773abc74c4",
+        "router":"0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff"
+    },
+    "ApeSwap" : {
+        "factory":"0xcf083be4164828f00cae704ec15a36d711491284",
+        "router":"0xC0788A3aD43d79aa53B09c2EaCc313A787d1d607"
+    },
+    "PolyDex" : {
+        "factory":"0x5bdd1cd910e3307582f213b33699e676e61dead9",
+        "router":"0xBd13225f0a45BEad8510267B4D6a7c78146Be459"
+    },
+    "Jetswap" : {
+        "factory":"0x668ad0ed2622c62e24f0d5ab6b6ac1b9d2cd4ac7",
+        "router":"0x5C6EC38fb0e2609672BDf628B1fD605A523E5923"
+    }
 }

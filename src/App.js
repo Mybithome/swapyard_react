@@ -12,14 +12,14 @@ function App() {
 
       <div className="header">
         <div className="logo">
-          <img src='$logo' alt='SwapYard' />
+          S|Y
         </div>
-        <button className="enableEthereumButton">Enable Ethereum</button>
+        <button className="enableEthereumButton ui-btn ui-shadow ui-corner-all" data-role="button">Connect To Wallet</button>
       </div>
       <div className="page">
         <div className="swaps_column">
           <div className="swaps_heading">
-            SWAP
+            First choose a coin to swap...
           </div>
 
           <div className='swaps'>
@@ -30,7 +30,7 @@ function App() {
 
         <div className='buys_column'>
           <div className='buys_heading'>
-            BUY
+            Now choose where to buy... 
           </div>
 
           <div className='buys'>
@@ -41,7 +41,7 @@ function App() {
 
         <div className='sells_column'>
           <div className='sells_heading'>
-            SELL
+            Next choose a place to sell...
           </div>
 
           <div className='sells'>
@@ -52,87 +52,25 @@ function App() {
 
         <div className='trade_column'>
           <div className='borrow_heading'>
-              BORROW
+              Borrow money and trade...
           </div>
 
           <div className='borrow_select'>
-              <div className='borrow_less'>
-                  <img src='' alt=''></img>
-              </div>
               <div className='borrow_amount'>
-                10000
+                $10000
               </div>
-              <div className='borrow_more'>
-                  <img src='' alt=''></img>
-              </div>
+              <input type="range" name="slider-1" id="slider-1" min="0" step="1000" max="10000" ></input>
           </div>
             
           <div className='selected_cards'>
             <div className="swap_card">
-            <div className="token_img">
-                <img src='$logo' alt='$tokenName' />
-            </div>
-            <div className='details_left'>
-                <div className='symbol'>
-                "SYMBOL"
-                </div>
-                <div className='label'>
-                "T" 987696
-                </div>
-            </div>
-            <div className='details_right'>
-                <div className='score'>
-                3434
-                </div>
-                <div className='label'>
-                VOLATILITY
-                </div>
-            </div>
+              No Coin Selected...
             </div>
             <div className="buy_card">
-            <div className="token_img">
-                <img src='$logo' alt='$tokenName' />
-            </div>
-            <div className='details_left'>
-                <div className='symbol'>
-                "SYMBOL"
-                </div>
-                <div className='label'>
-                "T" 987696
-                </div>
-            </div>
-            <div className='details_right'>
-                <div className='score'>
-                + 3434
-                </div>
-                <div className='label'>
-                VOLATILITY
-                </div>
-            </div>
-            </div>
-            <div className='swap_image'>
-                <img src='' alt=''></img>
+              No Buy Exchange Selected...
             </div>
             <div className="sell_card">
-            <div className="token_img">
-                <img src='$logo' alt='$tokenName' />
-            </div>
-            <div className='details_left'>
-                <div className='symbol'>
-                "SYMBOL"
-                </div>
-                <div className='label'>
-                "T" 987696
-                </div>
-            </div>
-            <div className='details_right'>
-                <div className='score'>
-                + 3434
-                </div>
-                <div className='label'>
-                VOLATILITY
-                </div>
-            </div>
+              No Sell Exchange Selected...
             </div>
           </div>
           <div className='trade_details reserves_delta'>
@@ -140,7 +78,7 @@ function App() {
                 RERSERVE DELTA
               </div>
               <div className='label_right'>
-                6546
+                000
               </div>
           </div>
 
@@ -149,7 +87,7 @@ function App() {
                 BUY AMOUNT
               </div>
               <div className='label_right'>
-                6546
+                000
               </div>
           </div>
           <div className='trade_details sell_return'>
@@ -157,7 +95,7 @@ function App() {
                 SELL RETURN
               </div>
               <div className='label_right'>
-                654156  
+                000
               </div>
           </div>
           <div className='trade_details estimated_return'>
@@ -165,7 +103,7 @@ function App() {
                 EST RETURN
               </div>
               <div className='label_right'>
-                235415   
+                000   
               </div>
           </div>
           <div className='trade_details gas'>
@@ -173,7 +111,7 @@ function App() {
                 EST GAS
               </div>
               <div className='label_right'>
-                35
+                000
               </div>
           </div>
           {/* <div className='trade_details slippage'>
