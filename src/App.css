@@ -9,28 +9,33 @@ body{
 }
 
 .data_log {
-  position: relative;
-  top: 10px;
-  left: 10px;
-  height: 0px;
-  color: rgb(149, 149, 149);
+  float: left;
+    left: 10px;
+    position: relative;
+    top: 10px;
 }
 
 .notify.info {
-  float: left;
-  clear: right;
+  clear: left;
+    float: left;
+    width: 500px;
+    margin-right: -500px;
   color: rgb(149, 149, 149);
 }
 
 .notify.warn {
-  float: left;
-  clear: right;
+  clear: left;
+    float: left;
+    width: 500px;
+    margin-right: -500px;
   color: rgb(255, 187, 0);
 }
 
 .notify.error {
+clear: left;
   float: left;
-  clear: right;
+  width: 500px;
+  margin-right: -500px;
   color: rgb(255, 70, 70);
 }
 
