@@ -137,34 +137,34 @@
       async function testClick() {
 
         maxBuySpend = $('#slider-1').val();
-        $('.data_log').append(`<code className="notify info"> Setting spend amount to ${maxBuySpend}...</code>`);
+        //$('.data_log').append(`<code class="notify info"> Setting spend amount to ${maxBuySpend}...</code>`);
 
         getFlashLoanPool();
 
         if (typeof window.ethereum !== 'undefined') {
-          $('.data_log').append(`<code className="notify info"> MetaMask Is available...</code >`);
+          //$('.data_log').append(`<code class="notify info"> MetaMask Is available...</code >`);
         } else {
-          $('.data_log').append(`<code className="notify info"> Mesage...</code>`);
+          //$('.data_log').append(`<code class="notify info"> Mesage...</code>`);
         }
 
         if (typeof (userAddress) === 'undefined') {
-          $('.data_log').append(`<code className="notify error"> You Must Connect First!</code>`);
+          //$('.data_log').append(`<code class="notify error"> You Must Connect First!</code>`);
           $('.enableEthereumButton').notify(`Click Here To Connect`, "info");
           return;
         }
 
         if (window.ethereum.chainId !== '0x89') {
-          $('.data_log').append(`< code className = "notify error" > You Must Connect to POLYGON MAINNET</code>`);
+          //$('.data_log').append(`< code class= "notify error" > You Must Connect to POLYGON MAINNET</code>`);
           return;
         }
 
         //$.notify(`Connecting to SwapYard contract...`, "info");
-        $('.data_log').append(`<code className="notify info"> Connecting to SwapYard contract...</code>`);
+        //$('.data_log').append(`<code class="notify info"> Connecting to SwapYard contract...</code>`);
         ArbitrageABI = await getArbitrageABI.responseJSON;
         arbitrageContract = await new web3.eth.Contract(ArbitrageABI.abi, "0x3825b1da21a35d16a0ad08fc2eb0bb5852a43cad");
 
         //$.notify(`Connecting to loan token contract...`, "info");
-        $('.data_log').append(`<code className="notify info"> Connecting to loan token contract...</code>`);
+        //$('.data_log').append(`<code class="notify info"> Connecting to loan token contract...</code>`);
         loanTokenABI = await getERC20ABI.responseJSON;
         loanTokenContract = new web3.eth.Contract(loanTokenABI.abi, loanTokenAddress);
         
@@ -174,61 +174,61 @@
         IUniswapV2Factory = await getFactoryABI.responseJSON;
 
         //$.notify(`Connecting to buy exchange factory...`, "info");
-        $('.data_log').append(`<code className="notify info"> Connecting to buy exchange factory...</code>`);
+        //$('.data_log').append(`<code class="notify info"> Connecting to buy exchange factory...</code>`);
         buyFactory = await new web3.eth.Contract(IUniswapV2Factory.abi, buyExchange);
         
         //$.notify(`Connecting to buy exchange router...`, "info");
-        $('.data_log').append(`<code className="notify info"> Connecting to buy exchange router...</code>`);
+        //$('.data_log').append(`<code class="notify info"> Connecting to buy exchange router...</code>`);
         buyRouter = await new web3.eth.Contract(IUniswapV2Router.abi, exchangeRouters[buyExchangeName].router);
         
         //$.notify(`Connecting to sell exchange factory...`, "info");
-        $('.data_log').append(`<code className="notify info"> Connecting to sell exchange factory...</code>`);
+        //$('.data_log').append(`<code class="notify info"> Connecting to sell exchange factory...</code>`);
         sellFactory = await new web3.eth.Contract(IUniswapV2Factory.abi, sellExchange); 
         
         //$.notify(`Connecting to sell exchange router...`, "info");
-        $('.data_log').append(`<code className="notify info"> Connecting to sell exchange router...</code>`);
+        //$('.data_log').append(`<code class="notify info"> Connecting to sell exchange router...</code>`);
         sellRouter = await new web3.eth.Contract(IUniswapV2Router.abi, exchangeRouters[sellExchangeName].router);
         //get pair contract
         //$.notify(`Requesting pair contract from buy factory...`, "info");
-        $('.data_log').append(`<code className="notify info"> Requesting pair contract from buy factory...</code>`);
+        //$('.data_log').append(`<code class="notify info"> Requesting pair contract from buy factory...</code>`);
         buyPairAddress = await buyFactory.methods.getPair(loanTokenAddress, selectedTokenAddress).call({ gas: "100000" });
         
         //$.notify(`Buy pair address is ${buyPairAddress}...`, "info");
-        $('.data_log').append(`<code className="notify info"> Buy pair address is ${buyPairAddress}...</code>`);
+        //$('.data_log').append(`<code class="notify info"> Buy pair address is ${buyPairAddress}...</code>`);
 
         //$.notify(`Requesting pair contract from sell factory...`, "info");
-        $('.data_log').append(`<code className="notify info"> Requesting pair contract from sell factory...</code>`);
+        //$('.data_log').append(`<code class="notify info"> Requesting pair contract from sell factory...</code>`);
         sellPairAddress = await sellFactory.methods.getPair(loanTokenAddress, selectedTokenAddress).call({ gas: "100000" });
        
         //$.notify(`Sell pair address is ${sellPairAddress}...`, "info");
-        $('.data_log').append(`<code className="notify info"> Sell pair address is ${sellPairAddress}...</code>`);
+        //$('.data_log').append(`<code class="notify info"> Sell pair address is ${sellPairAddress}...</code>`);
 
         //$.notify(`Connecting to buy pair contract...`, "info");
-        $('.data_log').append(`<code className="notify info"> Connecting to buy pair contract...</code>`);
+        //$('.data_log').append(`<code class="notify info"> Connecting to buy pair contract...</code>`);
         buyPairContract = await new web3.eth.Contract(IUniswapV2Pair.abi, buyPairAddress);
 
         //$.notify(`Connecting to sell pair contract...`, "info");
-        $('.data_log').append(`<code className="notify info"> Connecting to sell pair contract...</code>`);
+        //$('.data_log').append(`<code class="notify info"> Connecting to sell pair contract...</code>`);
         sellPairContract = await new web3.eth.Contract(IUniswapV2Pair.abi, sellPairAddress);
         //Get reserves
         //$.notify(`Requesting reserves from buy pair contract...`, "info");
-        $('.data_log').append(`<code className="notify info"> Requesting reserves from buy pair contract...</code>`);
+        //$('.data_log').append(`<code class="notify info"> Requesting reserves from buy pair contract...</code>`);
         buyReserves = await buyPairContract.methods.getReserves().call({ gas: "100000" });
 
         //$.notify(`Requesting reserves from sell pair contract...`, "info");
-        $('.data_log').append(`<code className="notify info"> Requesting reserves from sell pair contract...</code>`);
+        //$('.data_log').append(`<code class="notify info"> Requesting reserves from sell pair contract...</code>`);
         sellReserves = await sellPairContract.methods.getReserves().call({ gas: "100000" });
 
         //$.notify(`Calculating exact buy price...`, "info");
-        $('.data_log').append(`<code className="notify info"> Calculating exact buy price...</code>`);
+        //$('.data_log').append(`<code class="notify info"> Calculating exact buy price...</code>`);
         calcBuyPrice = Big(buyReserves[0]).div(Big(buyReserves[1])).toString();
 
         //$.notify(`Calculating exact sell price...`, "info");
-        $('.data_log').append(`<code className="notify info"> Calculating exact sell price...</code>`);
+        //$('.data_log').append(`<code class="notify info"> Calculating exact sell price...</code>`);
         calcSellPrice = Big(sellReserves[0]).div(Big(sellReserves[1])).toString();
 
         //$.notify(`Calculating exact price delta between exchanges...`, "info");
-        $('.data_log').append(`<code className="notify info"> Calculating exact price delta between exchanges...</code>`);
+        //$('.data_log').append(`<code class="notify info"> Calculating exact price delta between exchanges...</code>`);
         difference = (((calcBuyPrice - calcSellPrice) / calcSellPrice) * 100).toFixed(2);
         
 
@@ -254,7 +254,7 @@
 
         // Returns the maximum amount of selected tokens returned for the maxBuySpend.
         //$.notify(`Requesting estimated returns for buy exchange...`, "info");
-        $('.data_log').append(`<code className="notify info"> Requesting estimated returns for buy exchange...</code>`);
+        //$('.data_log').append(`<code class="notify info"> Requesting estimated returns for buy exchange...</code>`);
         buyAmountsOut = await buyRouter.methods.getAmountsOut( web3.utils.toWei(maxBuySpend.toString(), 'wei'), path ).call({ gas: "100000" });
 
         path[0] = selectedTokenAddress;
@@ -262,21 +262,21 @@
 
         // Returns the maximum amount of loanTokens returned for the amount of selected Tokens returned by buyAmountsOut.
         //$.notify(`Requesting estimated returns for sell exchange...`, "info");
-        $('.data_log').append(`<code className="notify info"> Requesting estimated returns for sell exchange...</code>`);
+        //$('.data_log').append(`<code class="notify info"> Requesting estimated returns for sell exchange...</code>`);
         sellAmountsOut = await sellRouter.methods.getAmountsOut( web3.utils.BN(buyAmountsOut[1]), path ).call({ gas: "100000" });
 
         //$.notify(`Calculating estimated return...`, "info");
-        $('.data_log').append(`<code className="notify info"> Calculating estimated return...</code>`);
+        //$('.data_log').append(`<code class="notify info"> Calculating estimated return...</code>`);
         let testProfit = sellAmountsOut[1] - buyAmountsOut[0] ;
         
         if (testProfit > 0){
           isProfitable = true;
           //$.notify(`Test is estimated to be profitable...`, "success");
-          $('.data_log').append(`<code className="notify success"> Test is estimated to be profitable...</code>`);
+          //$('.data_log').append(`<code class="notify success"> Test is estimated to be profitable...</code>`);
         } else {
           isProfitable = false;
           //$.notify(`Test is estimated to be un-profitable...`, "error");
-          $('.data_log').append(`<code className="notify error"> Test is estimated to be un-profitable...</code>`);
+          //$('.data_log').append(`<code class="notify error"> Test is estimated to be un-profitable...</code>`);
         }
 
         // Display Results
@@ -293,14 +293,14 @@
         if (isProfitable) {
           try {
             //$.notify(`Approving loan token with user...`, "info");
-            $('.data_log').append(`<code className="notify info"> Approving loan token with user...</code>`);
+            //$('.data_log').append(`<code class="notify info"> Approving loan token with user...</code>`);
             
             estimatedGas = await web3.eth.getGasPrice()
             contractApproval = await loanTokenContract.methods.approve("0x3825b1dA21a35d16a0aD08Fc2Eb0BB5852a43cAD", web3.utils.toWei(maxBuySpend.toString(), 'ether').toString()).send({ from: `${userAddress}`, gasPrice: `${estimatedGas}`, maxFeePerGas: web3.utils.toWei('40', 'Gwei').toString(), maxPriorityFeePerGas: web3.utils.toWei('30', 'Gwei').toString() });
           } catch(error) {
             let errorMessage = JSON.parse(error.message.split("Internal JSON-RPC error.\n").pop()).message;
             //$.notify(errorMessage, "error");
-            $('.data_log').append(`<code className="notify error"> ${errorMessage}...</code>`);
+            //$('.data_log').append(`<code class="notify error"> ${errorMessage}...</code>`);
           }
         }
 
@@ -311,11 +311,11 @@
 
       async function sendClick() {
         try {
-          $('.data_log').append(`<code className="notify info"> Sending transaction please wait......</code>`);
+          //$('.data_log').append(`<code class="notify info"> Sending transaction please wait......</code>`);
             receipt = await arbitrageContract.methods.executeTrade(flashLoanPool, loanTokenAddress, selectedTokenAddress, web3.utils.toWei(maxBuySpend.toString(), 'ether').toString(), exchangeRouters[buyExchangeName].Router, exchangeRouters[sellExchange], userAddress).send({ from: `${userAddress}`, gasPrice: web3.utils.toWei(estimatedGas), maxFeePerGas: web3.utils.toWei('100', 'Gwei').toString(), maxPriorityFeePerGas: web3.utils.toWei('95', 'Gwei').toString() })
           } catch (error) {
           let errorMessage = JSON.parse(error.message.split("Internal JSON-RPC error.\n").pop()).message;
-          $('.data_log').append(`<code className="notify error"> ${errorMessage}...</code>`);
+          //$('.data_log').append(`<code class="notify error"> ${errorMessage}...</code>`);
         }
         $.notify(reciept, "success")
       };
@@ -414,13 +414,13 @@
         let html = '';
 
         //Get the data from the call 
-        $('.data_log').append(`<code className="notify info"> Retrieving recent trade data...</code>`);
+        //$('.data_log').append(`<code class="notify info"> Retrieving recent trade data...</code>`);
         let tradeData = await getTrades();
 
         let trades = tradeData.data.ethereum.dexTrades;
 
         //Create a List of Swaps
-        $('.data_log').append(`<code className="notify info"> Building swap cards...</code>`);
+        //$('.data_log').append(`<code class="notify info"> Building swap cards...</code>`);
         let swaps = [];
 
         trades.forEach(trade => {

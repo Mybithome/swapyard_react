@@ -17,17 +17,20 @@ body{
 }
 
 .notify.info {
-  display:block;
+  float: left;
+  clear: right;
   color: rgb(149, 149, 149);
 }
 
 .notify.warn {
-  display: block;
+  float: left;
+  clear: right;
   color: rgb(255, 187, 0);
 }
 
 .notify.error {
-  display: block;
+  float: left;
+  clear: right;
   color: rgb(255, 70, 70);
 }
 
