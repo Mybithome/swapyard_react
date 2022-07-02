@@ -8,6 +8,29 @@ body{
   font-family: 'Finlandica', sans-serif;
 }
 
+.data_log {
+  position: relative;
+  top: 10px;
+  left: 10px;
+  height: 0px;
+  color: rgb(149, 149, 149);
+}
+
+.notify.info {
+  display:block;
+  color: rgb(149, 149, 149);
+}
+
+.notify.warn {
+  display: block;
+  color: rgb(255, 187, 0);
+}
+
+.notify.error {
+  display: block;
+  color: rgb(255, 70, 70);
+}
+
 .header {
   height: auto;
   width: auto;

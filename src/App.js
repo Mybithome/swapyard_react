@@ -1,4 +1,4 @@
-import { type } from '@testing-library/user-event/dist/type';
+
 import './App.css';
 
 
@@ -15,6 +15,9 @@ function App() {
           S|Y
         </div>
         <button className="enableEthereumButton ui-btn ui-shadow ui-corner-all" data-role="button">Connect To Wallet</button>
+      </div>
+      <div className="data_log">
+        <code className="notify info"> Loading Up... </code>
       </div>
       <div className="page">
         <div className="swaps_column">
