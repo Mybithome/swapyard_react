@@ -11,7 +11,7 @@ body{
 .header {
   height: auto;
   width: auto;
-  background-color: #cacaca;
+  background-color: whitesmoke;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -125,6 +125,10 @@ body{
   margin-bottom: 30px;
   margin-top: 0px;
   max-width: 500px;
+}
+
+.disabled {
+  opacity: 25%;
 }
 
 .token_img {

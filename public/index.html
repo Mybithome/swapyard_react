@@ -133,136 +133,79 @@
       let imageUrl; 
       let contractApproval;
 
-
-      
-
-      
-
       async function testClick() {
 
-        maxBuySpend = $('.borrow_amount input').val();
+        maxBuySpend = $('#slider-1').val();
+        $.notify(`Setting spend amount to ${maxBuySpend}...`, "info");
 
         getFlashLoanPool();
 
         if (typeof window.ethereum !== 'undefined') {
-          console.log('MetaMask is installed!');
-        } 
+          $.notify(`MetaMask Is available...`, "info");
+        } else {
+          $.notify(`You need MetaMask to continue...`, "info");
+        }
 
         if (typeof (userAddress) === 'undefined') {
-          $('.enableEthereumButton').notify("You Must Connect First", "error", {postion: "bottom"});
+          $.notify("You Must Connect First", "error", {postion: "bottom-right"});
           return;
         }
 
         if (window.ethereum.chainId !== '0x89') {
-          $('.enableEthereumButton').notify("You Must Connect to POLYGON MAINNET", "error", { postion: "bottom" });
+          $.notify("You Must Connect to POLYGON MAINNET", "error", { postion: "bottom-right" });
           return;
         }
 
+        $.notify(`Connecting to SwapYard contract...`, "info");
         ArbitrageABI = await getArbitrageABI.responseJSON;
         arbitrageContract = await new web3.eth.Contract(ArbitrageABI.abi, "0x3825b1da21a35d16a0ad08fc2eb0bb5852a43cad");
 
+        $.notify(`Connecting to loan token contract...`, "info");
         loanTokenABI = await getERC20ABI.responseJSON;
         loanTokenContract = new web3.eth.Contract(loanTokenABI.abi, loanTokenAddress);
         
-        exchangeRouters = await getExchangeRouters.responseJSON;
+        
         IUniswapV2Pair = await getPairABI.responseJSON;
         IUniswapV2Router = await getRouterABI.responseJSON;
         IUniswapV2Factory = await getFactoryABI.responseJSON;
+
+        $.notify(`Connecting to buy exchange factory...`, "info");
         buyFactory = await new web3.eth.Contract(IUniswapV2Factory.abi, buyExchange);
+        $.notify(`Connecting to buy exchange router...`, "info");
         buyRouter = await new web3.eth.Contract(IUniswapV2Router.abi, exchangeRouters[buyExchangeName].router);
+        $.notify(`Connecting to sell exchange factory...`, "info");
         sellFactory = await new web3.eth.Contract(IUniswapV2Factory.abi, sellExchange); 
+        $.notify(`Connecting to sell exchange router...`, "info");
         sellRouter = await new web3.eth.Contract(IUniswapV2Router.abi, exchangeRouters[sellExchangeName].router);
         //get pair contract
+        $.notify(`Requesting pair contract from buy factory...`, "info");
         buyPairAddress = await buyFactory.methods.getPair(loanTokenAddress, selectedTokenAddress).call({ gas: "100000" });
+        $.notify(`Buy pair address is ${buyPairAddress}...`, "info");
+
+        $.notify(`Requesting pair contract from sell factory...`, "info");
         sellPairAddress = await sellFactory.methods.getPair(loanTokenAddress, selectedTokenAddress).call({ gas: "100000" });
+        $.notify(`Sell pair address is ${sellPairAddress}...`, "info");
+
+        $.notify(`Connecting to buy pair contract...`, "info");
         buyPairContract = await new web3.eth.Contract(IUniswapV2Pair.abi, buyPairAddress);
+        $.notify(`Connecting to sell pair contract...`, "info");
         sellPairContract = await new web3.eth.Contract(IUniswapV2Pair.abi, sellPairAddress);
         //Get reserves
+        $.notify(`Requesting reserves from buy pair contract...`, "info");
         buyReserves = await buyPairContract.methods.getReserves().call({ gas: "100000" });
+
+        $.notify(`Requesting reserves from sell pair contract...`, "info");
         sellReserves = await sellPairContract.methods.getReserves().call({ gas: "100000" });
+
+        $.notify(`Calculating exact buy price...`, "info");
         calcBuyPrice = Big(buyReserves[0]).div(Big(buyReserves[1])).toString();
+
+        $.notify(`Calculating exact sell price...`, "info");
         calcSellPrice = Big(sellReserves[0]).div(Big(sellReserves[1])).toString();
+
+        $.notify(`Calculating exact price delta between exchanges...`, "info");
         difference = (((calcBuyPrice - calcSellPrice) / calcSellPrice) * 100).toFixed(2);
-        if (buyPrice < 1 ) {
-          trueBuyPriceTokenA = 100000000000000000;
-          trueBuyPriceTokenB = buyPrice * 100000000000000000;
-        } else if (buyPrice > 10 ) {
-          trueBuyPriceTokenA = 10000000000000000;
-          trueBuyPriceTokenB = buyPrice * 10000000000000000;
-        } else if (buyPrice > 100) {
-          trueBuyPriceTokenA = 1000000000000000;
-          trueBuyPriceTokenB = buyPrice * 1000000000000000;
-        } else if (buyPrice > 1000) {
-          trueBuyPriceTokenA = 100000000000000;
-          trueBuyPriceTokenB = buyPrice * 100000000000000;
-        } else if(buyPrice > 10000) {
-          trueBuyPriceTokenA = 10000000000000;
-          trueBuyPriceTokenB = buyPrice * 10000000000000;
-        } else if(buyPrice > 100000) {
-          trueBuyPriceTokenA = 1000000000000;
-          trueBuyPriceTokenB = buyPrice * 1000000000000;
-        } else if(buyPrice > 1000000) {
-          trueBuyPriceTokenA = 100000000000;
-          trueBuyPriceTokenB = buyPrice * 100000000000;
-        } else if(buyPrice > 10000000) {
-          trueBuyPriceTokenA = 10000000000;
-          trueBuyPriceTokenB = buyPrice * 10000000000;
-        } else if(buyPrice > 100000000) {
-          trueBuyPriceTokenA = 1000000000;
-          trueBuyPriceTokenB = buyPrice * 1000000000;
-        } else if(buyPrice > 1000000000) {
-          trueBuyPriceTokenA = 100000000;
-          trueBuyPriceTokenB = buyPrice * 100000000;
-        } else if(buyPrice > 10000000000) {
-          trueBuyPriceTokenA = 10000000;
-          trueBuyPriceTokenB = buyPrice * 10000000;
-        } else if(buyPrice > 100000000000) {
-          trueBuyPriceTokenA = 1000000;
-          trueBuyPriceTokenB = buyPrice * 1000000;
-        } else if(buyPrice > 1000000000000) {
-          trueBuyPriceTokenA = 100000;
-          trueBuyPriceTokenB = buyPrice * 100000;
-        }
-        if (sellPrice < 1) {
-          trueSellPriceTokenA = 100000000000000000;
-          trueSellPriceTokenB = sellPrice * 100000000000000000;
-        } else if (sellPrice > 10) {
-          trueSellPriceTokenA = 10000000000000000;
-          trueSellPriceTokenB = sellPrice * 10000000000000000;
-        } else if (sellPrice > 100) {
-          trueSellPriceTokenA = 1000000000000000;
-          trueSellPriceTokenB = sellPrice * 1000000000000000;
-        } else if (sellPrice > 1000) {
-          trueSellPriceTokenA = 100000000000000;
-          trueSellPriceTokenB = sellPrice * 100000000000000;
-        } else if (sellPrice > 10000) {
-          trueSellPriceTokenA = 10000000000000;
-          trueSellPriceTokenB = sellPrice * 10000000000000;
-        } else if (sellPrice > 100000) {
-          trueSellPriceTokenA = 1000000000000;
-          trueSellPriceTokenB = sellPrice * 1000000000000;
-        } else if (sellPrice > 1000000) {
-          trueSellPriceTokenA = 100000000000;
-          trueSellPriceTokenB = sellPrice * 100000000000;
-        } else if (sellPrice > 10000000) {
-          trueSellPriceTokenA = 10000000000;
-          trueSellPriceTokenB = sellPrice * 10000000000;
-        } else if (sellPrice > 100000000) {
-          trueSellPriceTokenA = 1000000000;
-          trueSellPriceTokenB = sellPrice * 1000000000;
-        } else if (sellPrice > 1000000000) {
-          trueSellPriceTokenA = 100000000;
-          trueSellPriceTokenB = sellPrice * 100000000;
-        } else if (sellPrice > 10000000000) {
-          trueSellPriceTokenA = 10000000;
-          trueSellPriceTokenB = sellPrice * 10000000;
-        } else if (sellPrice > 100000000000) {
-          trueSellPriceTokenA = 1000000;
-          trueSellPriceTokenB = sellPrice * 1000000;
-        } else if (sellPrice > 1000000000000) {
-          trueSellPriceTokenA = 100000;
-          trueSellPriceTokenB = sellPrice * 100000;
-        }
+        
 
         // Try New Function to Determine Exact Borrow Amount
         // try {
@@ -285,24 +228,41 @@
         path[1] = selectedTokenAddress;
 
         // Returns the maximum amount of selected tokens returned for the maxBuySpend.
-        buyAmountsOut = await buyRouter.methods.getAmountsOut( web3.utils.BN(maxBuySpend), path ).call({ gas: "100000" });
+        $.notify(`Requesting estimated returns for buy exchange...`, "info");
+        buyAmountsOut = await buyRouter.methods.getAmountsOut( web3.utils.toWei(maxBuySpend.toString(), 'wei'), path ).call({ gas: "100000" });
 
         path[0] = selectedTokenAddress;
         path[1] = loanTokenAddress;
 
         // Returns the maximum amount of loanTokens returned for the amount of selected Tokens returned by buyAmountsOut.
+        $.notify(`Requesting estimated returns for sell exchange...`, "info");
         sellAmountsOut = await sellRouter.methods.getAmountsOut( web3.utils.BN(buyAmountsOut[1]), path ).call({ gas: "100000" });
 
+        $.notify(`Calculating estimated return...`, "info");
         let testProfit = sellAmountsOut[1] - buyAmountsOut[0] ;
         
         if (testProfit > 0){
           isProfitable = true;
+          $.notify(`Test is estimated to be profitable...`, "success");
         } else {
           isProfitable = false;
+          $.notify(`Test is estimated to be un-profitable...`, "error");
         }
+
+        // Display Results
+        setTimeout(function () {
+          $('.reserves_delta .label_right').html(difference);
+
+          $('.buy_return  .label_right').html(buyAmountsOut[0]);
+
+          $('.sell_return .label_right').html(sellAmountsOut[1]);
+
+          $('.estimated_return .label_right').html(testProfit);
+        }, 100);
 
         if (isProfitable) {
           try {
+            $.notify(`Approving loan token with user...`, "info");
             estimatedGas = await web3.eth.getGasPrice()
             contractApproval = await loanTokenContract.methods.approve("0x3825b1dA21a35d16a0aD08Fc2Eb0BB5852a43cAD", web3.utils.toWei(maxBuySpend.toString(), 'ether').toString()).send({ from: `${userAddress}`, gasPrice: `${estimatedGas}`, maxFeePerGas: web3.utils.toWei('40', 'Gwei').toString(), maxPriorityFeePerGas: web3.utils.toWei('30', 'Gwei').toString() });
           } catch(error) {
@@ -315,16 +275,7 @@
           }
         }
 
-        // Display Results
-        setTimeout(function () {
-          $('.reserves_delta .label_right').html(difference);
-
-          $('.buy_return  .label_right').html(buyAmountsOut[0]);
-
-          $('.sell_return .label_right').html(sellAmountsOut[1]);
-
-          $('.estimated_return .label_right').html(testProfit);
-         }, 100);
+        
 
          
       };
@@ -334,25 +285,27 @@
         await arbitrageContract.methods.executeTrade(flashLoanPool, loanTokenAddress, selectedTokenAddress,  web3.utils.toWei(maxBuySpend.toString(), 'ether').toString(), exchangeRouters[buyExchangeName].Router, exchangeRouters[sellExchange], userAddress).send({ from: `${userAddress}`, gasPrice: web3.utils.toWei(estimatedGas), maxFeePerGas: web3.utils.toWei('100', 'Gwei').toString(), maxPriorityFeePerGas: web3.utils.toWei('95', 'Gwei').toString() })
       };
 
-      async function buyClick(el, _buyExchange, _buyPrice) {
+      async function buyClick(el, _buyExchange, _buyPrice, _buyExchangeName) {
 
-         buyPrice = _buyPrice;
+        buyPrice = _buyPrice;
         $('.buys_column').hide();
         $('.sells_column').show();
         $('.selected_cards .buy_card').replaceWith(el);
         buyExchange = _buyExchange;
+        buyExchangeName = _buyExchangeName;
       };
 
-      async function sellClick(el, _sellExchange, _sellPrice) {
+      async function sellClick(el, _sellExchange, _sellPrice, _sellExchangeName) {
     sellPrice = _sellPrice;
     $('.sells_column').hide();
     $('.trade_column').show();
     $('.selected_cards .sell_card').replaceWith(el);
     sellExchange = _sellExchange;
+    sellExchangeName = _sellExchangeName;
   };
 
       async function swapClick(el, tokenAddress) {
-
+    exchangeRouters = await getExchangeRouters.responseJSON;
     selectedTokenAddress = tokenAddress;
     $('.swaps_column').hide();
     $('.buys_column').show();
@@ -419,6 +372,7 @@
       };
 
       async function createSwapCards() {
+
 
         savedImages = await getSavedImages;
 
@@ -498,9 +452,17 @@
 
       async function createSells(_buys, _totalBuys) {
 
+          let isInstalled;
+
           $('.sells').empty();
 
           for (i = 0; i < _buys.length; i++) {
+
+            if( typeof(exchangeRouters[_buys[i].exchangeName]) === 'undefined') {
+              isInstalled = 'disabled'
+            } else {
+              isInstalled = 'enabled'
+            }
 
             getImage(_buys[i].symbol);
 
@@ -508,7 +470,7 @@
 
             priceDelta = Number(priceDelta).toFixed(6);
             html = '';
-            let htmlSegment = `<div class="sell_card" onClick="sellClick(this, '${_buys[i].exchangeAddress}', ${_buys[i].price})">
+            let htmlSegment = `<div class="sell_card ${isInstalled}" onClick="sellClick(this, '${_buys[i].exchangeAddress}', ${_buys[i].price}, '${_buys[i].exchangeName}')">
                                 <div class="token_img">
                                   <img src='${imageUrl}' alt='' />
                                 </div>
@@ -537,9 +499,17 @@
 
       async function createBuys(_buys, _totalBuys) {
 
+        let isInstalled;
+
           $('.buys').empty();
 
           for (i = 0; i < _buys.length; i++) {
+
+            if (typeof (exchangeRouters[_buys[i].exchangeName]) === 'undefined') {
+              isInstalled = 'disabled'
+            } else {
+              isInstalled = 'enabled'
+            }
 
             getImage(_buys[i].symbol);
 
@@ -547,7 +517,7 @@
 
             priceDelta = Number(priceDelta).toFixed(6);
             html = '';
-            let htmlSegment = `<div class="buy_card" onClick="buyClick(this, '${_buys[i].exchangeAddress}', ${_buys[i].price})">
+            let htmlSegment = `<div class="buy_card ${isInstalled}" onClick="buyClick(this, '${_buys[i].exchangeAddress}', ${_buys[i].price}, '${_buys[i].exchangeName}')">
                                 <div class="token_img">
                                   <img src='${imageUrl}' alt='' />
                                 </div>
