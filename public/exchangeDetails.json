@@ -18,5 +18,12 @@
     "Jetswap" : {
         "factory":"0x668ad0ed2622c62e24f0d5ab6b6ac1b9d2cd4ac7",
         "router":"0x5C6EC38fb0e2609672BDf628B1fD605A523E5923"
-    }
-}
+    },
+    "FirebirdSwap" : {
+        "factory":"0x5De74546d3B86C8Df7FEEc30253865e1149818C8",
+        "router":"0xF6fa9Ea1f64f1BBfA8d71f7f43fAF6D45520bfac"
+    },
+    "OneSwap" : {
+        "factory":"0xD2891F9a9fDBFfC2DB3Ec9D4194409a7678CBc51",
+        "router":"0x9f197f9ff460355A40B3c9A10f7d1Ca65f365b83"
+    },
